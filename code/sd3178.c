@@ -1,3 +1,6 @@
+#include "api_config.h"
+
+#if 0
 extern I2C_HandleTypeDef hi2c2;
 
 /****************** 本地变量 **********************/
@@ -185,4 +188,5 @@ void ClrINT(u8 int_EN)
         buf = 0x80 & (~int_EN);
         I2CWriteSerial(RTC_Address,CTR2,1,&buf);
 }
+#endif
 /*********************************************END OF FILE**********************/

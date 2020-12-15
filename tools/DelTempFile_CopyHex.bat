@@ -17,5 +17,5 @@ echo %dt%
 pause
 
 @echo on
-copy Objects\smartswitch.hex ..\output_smartswitch_ad_485_%dt%.hex
-dir ..\output_smartswitch_ad_485_%dt%.hex
+copy Objects\smart_pjst.hex ..\release_smart_pjst_%dt%.hex
+dir ..\release_smart_pjst_%dt%.hex

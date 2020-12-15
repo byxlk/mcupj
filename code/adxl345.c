@@ -1,3 +1,7 @@
+#include "api_config.h"
+
+#if 0
+
 //初始化ADXL345.
 //返回值:0,初始化成功;1,初始化失败.
 u8 ADXL345_Init(void)
@@ -177,3 +181,5 @@ short ADXL345_Get_Angle(float x,float y,float z,u8 dir)
   }
  return res*1800/3.14;
 }
+
+#endif
