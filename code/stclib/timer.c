@@ -11,10 +11,10 @@
 #include	"timer.h"
 
 /********************* Timer0中断函数************************/
-void timer0_int (void) interrupt TIMER0_VECTOR
-{
+//void timer0_int (void) interrupt TIMER0_VECTOR
+//{
 
-}
+//}
 
 /********************* Timer1中断函数************************/
 void timer1_int (void) interrupt TIMER1_VECTOR

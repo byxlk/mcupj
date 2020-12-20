@@ -39,7 +39,7 @@ sbit HARDWARE_DEBUG_FLAG        = P5^4; // 1:开启debug 0：禁用debug
 
 sbit MSR_FZH181_CLK             = P0^6;
 sbit MSR_FZH181_DIO             = P0^7;
-//sbit MSR_FZH181_STB           = P3^3; INT1
+sbit MSR_FZH181_STB             = P0^5;
 
 sbit MSR_LED_Phase_Indicat      = P2^7; //相序指示灯
 sbit MSR_LED_Over_Loading       = P2^6; //超载
@@ -55,7 +55,7 @@ sbit MSR_MAX485_EN2             = P1^1;
 //sbit MSR_MAX485_TX2           = P4^7; //TXD2
 //sbit MSR_MAX485_RX2           = P4^6; //RXD2
 
-sbit MSR_MAX485_EN0             = P3^4;
+//sbit MSR_MAX485_EN0           = P3^4;
 //sbit MSR_MAX485_TX0           = P3^1; //TXD0
 //sbit MSR_MAX485_RX0           = P3^0; //RXD0
 
@@ -73,7 +73,7 @@ sbit MSR_WARN_OUTPUT            = P4^4; //报警输出
 // 从机pin脚定义
 sbit SLV_FZH181_CLK             = P0^6;
 sbit SLV_FZH181_DIO             = P0^7;
-//sbit SLV_FZH181_STB           = P3^3; INT1
+sbit SLV_FZH181_STB             = P0^5;
 
 sbit SLV_LED_ZCG_Indicat        = P4^5; //左超高
 sbit SLV_LED_Over_Loading       = P2^6; //超载
@@ -87,8 +87,8 @@ sbit SLV_LED_YCG_Indicat        = P2^7; //右超高
 sbit SLV_LED_Warn_Indicat       = P4^4; //报警指示
 
 sbit SLV_MAX485_EN1             = P3^4;
-//sbit SLV_MAX485_TX1           = P3^1; //TXD0
-//sbit SLV_MAX485_RX1           = P3^0; //RXD0
+//sbit SLV_MAX485_TX1           = P4^7; //TXD2
+//sbit SLV_MAX485_RX1           = P4^6; //RXD2
 
 sbit SLV_HX710A1_SCK            = P0^1;
 sbit SLV_HE710A1_SDA            = P0^0;
@@ -110,6 +110,9 @@ sbit SLV_ADXL345_SDO            = P1^4;
 sbit SLV_ADXL345_CLK            = P1^5;
 
 /*********************************************************/
+void delay_us(unsigned int t);
+void delay_ms(unsigned int t);
+
 void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
 void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
 

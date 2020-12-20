@@ -406,6 +406,11 @@
               <FileType>5</FileType>
               <FilePath>..\changelist.txt</FilePath>
             </File>
+            <File>
+              <FileName>common.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\common.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -415,11 +420,6 @@
               <FileName>ADC.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\stclib\ADC.c</FilePath>
-            </File>
-            <File>
-              <FileName>delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\code\stclib\delay.c</FilePath>
             </File>
             <File>
               <FileName>EEPROM.c</FileName>
@@ -455,6 +455,11 @@
               <FileName>USART.C</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\stclib\USART.C</FilePath>
+            </File>
+            <File>
+              <FileName>spi.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\code\stclib\spi.c</FilePath>
             </File>
           </Files>
         </Group>
