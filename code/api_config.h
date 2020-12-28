@@ -32,14 +32,15 @@
 #define SLV_LED_YCG_INDICAT        (17) //右超高
 #define SLV_LED_WARN_INDICAT       (18) //报警指示
 
+sbit FZH181_PIN_CLK             = P0^6;
+sbit FZH181_PIN_DIO             = P0^7;
+sbit FZH181_PIN_STB             = P0^5;
 
 /*********************************************************/
 sbit MASTER_INDICATOR_FLAG      = P5^5; // 1: 主机   0：从机
 sbit HARDWARE_DEBUG_FLAG        = P5^4; // 1:开启debug 0：禁用debug
 
-sbit MSR_FZH181_CLK             = P0^6;
-sbit MSR_FZH181_DIO             = P0^7;
-sbit MSR_FZH181_STB             = P0^5;
+
 
 sbit MSR_LED_Phase_Indicat      = P2^7; //相序指示灯
 sbit MSR_LED_Over_Loading       = P2^6; //超载
@@ -71,9 +72,6 @@ sbit MSR_WARN_OUTPUT            = P4^4; //报警输出
 
 /*********************************************************/
 // 从机pin脚定义
-sbit SLV_FZH181_CLK             = P0^6;
-sbit SLV_FZH181_DIO             = P0^7;
-sbit SLV_FZH181_STB             = P0^5;
 
 sbit SLV_LED_ZCG_Indicat        = P4^5; //左超高
 sbit SLV_LED_Over_Loading       = P2^6; //超载

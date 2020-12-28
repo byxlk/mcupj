@@ -1,10 +1,10 @@
  /*****************************************************************************
-  
+
  *MCU  ：STC12C5608AD
  * ：Keil uVision4
- * ：11.0592MHZ       
- * 
-             
+ * ：11.0592MHZ
+ *
+
 ********************************************************************************/
 #include <reg52.h>			   //MCU头文件
 #include "intrins.h"			   //包含nop指令头文件
@@ -42,17 +42,17 @@ void send_8bit(uchar dat)	 //发送8位数据,从低位开始
 {
   uchar i;
   for(i=0;i<8;i++)
-  {	
+  {
   	CLK=0;
-    if(dat&0x01) 
+    if(dat&0x01)
 	   DIO=1;
-	else         
+	else
 	   DIO=0;
 	_nop_();
 	_nop_();
 	_nop_();
-	CLK=1;	 
-	dat>>=1;	 
+	CLK=1;
+	dat>>=1;
   }
   CLK=0;
   DIO=0;
@@ -70,7 +70,7 @@ void send_command(uchar com)  //发送命令字节
 /****************读取按键值并存储*******************/
 void read_key(void)			   //读取5字节按键值并存入数组KEY[],从低字节、低位开始
 {
- unsigned char i,j; 
+ unsigned char i,j;
  send_command(0x42);		          //发送读按键命令
  DIO=1;					  //释放DIO数据总线
  for(j=0;j<5;j++)			  //连续读取5个字节
@@ -85,7 +85,7 @@ void read_key(void)			   //读取5字节按键值并存入数组KEY[],从低字节、低位开始
     KEY[j]=KEY[j]|0x80;
   }
   nop;
-} 
+}
   nop;
   nop;
 }
@@ -111,12 +111,12 @@ void display(uchar *p)   //显示函数，1~7位数码管显示0~6
   send_command(0x8F);	    //设置显示命令，打开显示并设置占空比14/16.
   STB=1;
 }
-	
+
 /*****************按键处理函数*********************/
 void key_process()		// 按键处理函数
 {
     if(KEY[0]!=0x00)
-   { 
+   {
     if((KEY[0]==0x01)) {display(CODE);} //K1与KS1按键按下，数码管显示数字0~6
     if((KEY[0]==0x08)) {display(TAB);}  //K1与KS2按键按下，数码管显示关闭
    }
@@ -133,5 +133,5 @@ while(1)
  delay_nms(200);   //延时200ms再读按键
  }
 }
- 
+
 
