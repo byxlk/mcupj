@@ -10,6 +10,8 @@
 #define LED_ON                     (0)
 #define LED_OFF                    (1)
 
+#define HX710A1                    (1)
+#define HX710A2                    (2)
 
 #define MSR_LED_PHASE_INDICAT      (0)  //相序指示灯
 #define MSR_LED_OVER_LOADING       (1)  //超载
@@ -111,9 +113,12 @@ sbit SLV_ADXL345_CLK            = P1^5;
 void delay_us(unsigned int t);
 void delay_ms(unsigned int t);
 
+/* Led Control */
 void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
 void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
 
+/* HX710A */
+unsigned long getHX710Count(unsigned char iNo);
 
 /*********************************************************/
 #endif
