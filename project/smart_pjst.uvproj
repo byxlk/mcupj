@@ -173,15 +173,15 @@
         </Utilities>
         <Target51>
           <Target51Misc>
-            <MemoryModel>0</MemoryModel>
+            <MemoryModel>2</MemoryModel>
             <RTOS>0</RTOS>
             <RomSize>2</RomSize>
             <DataHold>0</DataHold>
             <XDataHold>0</XDataHold>
-            <UseOnchipRom>0</UseOnchipRom>
+            <UseOnchipRom>1</UseOnchipRom>
             <UseOnchipArithmetic>0</UseOnchipArithmetic>
             <UseMultipleDPTR>1</UseMultipleDPTR>
-            <UseOnchipXram>0</UseOnchipXram>
+            <UseOnchipXram>1</UseOnchipXram>
             <HadIRAM>1</HadIRAM>
             <HadXRAM>1</HadXRAM>
             <HadIROM>1</HadIROM>

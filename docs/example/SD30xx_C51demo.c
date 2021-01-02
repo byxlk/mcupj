@@ -504,7 +504,6 @@ void main()
 		UartSend(Bat%10 + '0');
 		TxString("V\r\n");
 		
-		
 		Delayms(1000);			//—” ±1000ms£¨1s∂¡1¥Œ
 	}
 

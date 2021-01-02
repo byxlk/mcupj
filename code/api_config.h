@@ -1,11 +1,14 @@
 #ifndef		__CONFIG_H
 #define		__CONFIG_H
 
-#include "stclib/STC15Fxxxx.H"
+#include "STC15Fxxxx.H"
+#include "USART.h"
 
 /*********************************************************/
 
-#define DEBUG_MODE                 (0)	//开启调试模式
+#define DEBUG                      (0)	//开启调试模式
+#define LOGD                       PrintString1
+
 #define bool                       bit
 #define LED_ON                     (0)
 #define LED_OFF                    (1)
@@ -38,11 +41,17 @@ sbit FZH181_PIN_CLK             = P0^6;
 sbit FZH181_PIN_DIO             = P0^7;
 sbit FZH181_PIN_STB             = P0^5;
 
+sbit MAX485_EN                  = P3^4;
+//sbit MAX485_TX1               = P4^7; //TXD2
+//sbit MAX485_RX1               = P4^6; //RXD2
+
+sbit PWR_PHASE_PIN_A                = P3^5; //
+sbit PWR_PHASE_PIN_B                = P3^6; //INT2
+sbit PWR_PHASE_PIN_C                = P3^7; //INT3
+
 /*********************************************************/
 sbit MASTER_INDICATOR_FLAG      = P5^5; // 1: 主机   0：从机
 sbit HARDWARE_DEBUG_FLAG        = P5^4; // 1:开启debug 0：禁用debug
-
-
 
 sbit MSR_LED_Phase_Indicat      = P2^7; //相序指示灯
 sbit MSR_LED_Over_Loading       = P2^6; //超载
@@ -54,21 +63,9 @@ sbit MSR_LED_Down_Indicat       = P2^1; //下降
 sbit MSR_LED_Communicat_Indicat = P2^0; //通讯
 sbit MSR_LED_Power_Start        = P4^5; //电源启动指示
 
-sbit MSR_MAX485_EN2             = P1^1;
-//sbit MSR_MAX485_TX2           = P4^7; //TXD2
-//sbit MSR_MAX485_RX2           = P4^6; //RXD2
-
-//sbit MSR_MAX485_EN0           = P3^4;
-//sbit MSR_MAX485_TX0           = P3^1; //TXD0
-//sbit MSR_MAX485_RX0           = P3^0; //RXD0
-
 sbit MSR_SD3178_SCK             = P0^3;
 sbit MSR_SD3178_SDA             = P0^4;
 //sbit MSR_SD3178_INT           = P3^2; // INT0
-
-sbit MSR_PHASE_A                = P3^5; //
-sbit MSR_PHASE_B                = P3^6; //INT2
-sbit MSR_PHASE_C                = P3^7; //INT3
 
 sbit MSR_WARN_OUTPUT            = P4^4; //报警输出
 
@@ -86,18 +83,10 @@ sbit SLV_LED_Communicat_Indicat = P2^0; //通讯
 sbit SLV_LED_YCG_Indicat        = P2^7; //右超高
 sbit SLV_LED_Warn_Indicat       = P4^4; //报警指示
 
-sbit SLV_MAX485_EN1             = P3^4;
-//sbit SLV_MAX485_TX1           = P4^7; //TXD2
-//sbit SLV_MAX485_RX1           = P4^6; //RXD2
-
 sbit SLV_HX710A1_SCK            = P0^1;
 sbit SLV_HE710A1_SDA            = P0^0;
 sbit SLV_HX710A2_SCK            = P0^3;
 sbit SLV_HE710A2_SDA            = P0^2;
-
-sbit SLV_PHASE_A                = P3^5;
-sbit SLV_PHASE_B                = P3^6;
-sbit SLV_PHASE_C                = P3^7;
 
 sbit SLV_RELAY_CTRL1_XJ         = P4^1;
 sbit SLV_RELAY_CTRL1_SS         = P4^0;
@@ -110,8 +99,12 @@ sbit SLV_ADXL345_SDO            = P1^4;
 sbit SLV_ADXL345_CLK            = P1^5;
 
 /*********************************************************/
+/* Common */
 void delay_us(unsigned int t);
 void delay_ms(unsigned int t);
+void init_Watch_Dog(void);
+void Reboot_System(void);
+void PrintSystemInfoToSerial(void);
 
 /* Led Control */
 void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
@@ -119,6 +112,23 @@ void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
 
 /* HX710A */
 unsigned long getHX710Count(unsigned char iNo);
+
+/*max485*/
+void SendByteData(unsigned char dat);
+void SendDataFrame(unsigned char Length,unsigned char *str);
+
+/* FZH181 */
+/* SD3178 */
+/* PHASE CHECK */
+unsigned short checkACPowerPhaseSequence(void);
+
+/* Relay Ctrl */
+void relayCtrl_XJ1(bool flag);
+void relayCtrl_SS1(bool flag);
+void relayCtrl_XJ2(bool flag);
+void relayCtrl_SS2(bool flag);
+
+/* adxl345 */
 
 /*********************************************************/
 #endif

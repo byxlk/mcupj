@@ -12,14 +12,8 @@
 /*************	本地常量声明	**************/
 
 /*************	本地变量声明	**************/
-//bit SwitchOnStatus_preStatus = 0;
-//bit SwitchOffStatus_preStatus = 0;
-//bit ExAutoCtrl_preStatus = 0;
-//bit MotorRunningCtrl_Running = 0;//电机控制 -- 不转
-//bit isSystemStatusChanged = 0;
-//unsigned char TimeoutCount = STOP_TIMERCOUNT;
-//unsigned char PinStatus = 0x00;  //high byte: last status; low byte:current status
-//unsigned char idata BackUpStatus = 0x00;
+static unsigned short phaseSeq = 0x0;
+
 
 /*************	本地函数声明	**************/
 
@@ -150,28 +144,22 @@ static void Timer_Config(void)
 {
 	TIM_InitTypeDef		TIM_InitStructure;					//结构定义
 	TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
-	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
+	TIM_InitStructure.TIM_Polity    = PolityLow;			//指定中断优先级, PolityHigh,PolityLow
 	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
-	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;			//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;		    //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
 	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
 	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (12 * 20));	//初值, 节拍为20HZ(50ms)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
 	Timer_Inilize(Timer0,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
-}
-
-void	EXTI_config(void)
-{
-	EXTI_InitTypeDef	EXTI_InitStructure;					//结构定义
-
-	EXTI_InitStructure.EXTI_Mode      = EXT_MODE_RiseFall;	//中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
-	EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
-	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
-	Ext_Inilize(EXT_INT0,&EXTI_InitStructure);				//初始化INT0	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
-
-	EXTI_InitStructure.EXTI_Mode      = EXT_MODE_RiseFall;	//中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
-	EXTI_InitStructure.EXTI_Polity    = PolityLow;			//中断优先级,   PolityLow,PolityHigh
-	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
-	Ext_Inilize(EXT_INT1,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
+    
+    TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
+	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
+	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
+	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
+	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 1000));	//初值, 节拍为1000HZ(1ms)
+	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
+	Timer_Inilize(Timer1,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
 }
 
 static void MSR_External_Interrupt_Config(void)
@@ -183,6 +171,11 @@ static void MSR_External_Interrupt_Config(void)
 	EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
 	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
 	Ext_Inilize(EXT_INT0,&EXTI_InitStructure);				//初始化INT0	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
+    
+    EXTI_InitStructure.EXTI_Mode      = EXT_MODE_Fall;	    //中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
+	EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
+	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
+	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
 static void SLV_External_Interrupt_Config(void)
@@ -199,6 +192,11 @@ static void SLV_External_Interrupt_Config(void)
 	EXTI_InitStructure.EXTI_Polity    = PolityLow;			//中断优先级,   PolityLow,PolityHigh
 	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
 	Ext_Inilize(EXT_INT1,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
+    
+    EXTI_InitStructure.EXTI_Mode      = EXT_MODE_Fall;	    //中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
+	EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
+	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
+	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
 static void doRunning_MasterMain(void)
@@ -215,15 +213,22 @@ static void doRunning_MasterMain(void)
 
 	EA = 1; // enable all interrupt
 
-	//PrintSystemInfoToSerial();
-	//LOGD("=====================> Hardware Init Ok <=====================\r\n");
+	PrintSystemInfoToSerial();
+	LOGD("=====================> Hardware Init Ok <=====================\r\n");
 
 	//watch dog init
-	WDT_CONTR = 0x3A;  //0011 1010
-	//LOGD(" Watch Dog start ... \r\n");
-	
+    init_Watch_Dog();
+    
+    
 	while(1) {
-		NOP(5);
+        /* Step1: Check AC Power PhaseSequence */
+        phaseSeq = checkACPowerPhaseSequence()
+        if((phaseSeq & 0xF000) == 0) {/* 反序 */
+            /* Step1: Show alart led light */ 
+            /* Step1: Flasher alart show phase info on LED display  */
+            continue;
+        }
+
 	}	
 }
 
@@ -241,12 +246,11 @@ static void doRunning_SlaveMain(void)
 
 	EA = 1; // enable all interrupt
 
-	//PrintSystemInfoToSerial();
-	//LOGD("=====================> Hardware Init Ok <=====================\r\n");
+	PrintSystemInfoToSerial();
+	LOGD("=====================> Hardware Init Ok <=====================\r\n");
 
 	//watch dog init
-	WDT_CONTR = 0x3A;  //0011 1010
-	//LOGD(" Watch Dog start ... \r\n");
+    init_Watch_Dog();
 	
 	while(1) {
 		NOP(5);
@@ -268,8 +272,7 @@ void main(void)
 	}
 	
 	//if run to here, system must be reboot now from user space
-	IAP_CONTR &= 0x3F; // 0011 1111
-	IAP_CONTR |= 0x60; // 0010 0000
+    Reboot_System();
 }
 
 /********************* Timer0中断函数************************/
