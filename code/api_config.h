@@ -6,7 +6,7 @@
 
 /*********************************************************/
 
-#define DEBUG                      (0)	//开启调试模式
+#define DEBUG                      (1)	//开启调试模式
 #define LOGD                       PrintString1
 
 #define bool                       bit
@@ -104,7 +104,7 @@ void delay_us(unsigned int t);
 void delay_ms(unsigned int t);
 void init_Watch_Dog(void);
 void Reboot_System(void);
-void PrintSystemInfoToSerial(void);
+void PrintSystemInfoToSerial(bool msterFlag);
 
 /* Led Control */
 void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);

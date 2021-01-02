@@ -4,9 +4,9 @@
 
 COMx_Define	COM1,COM2;
 u8	xdata TX1_Buffer[COM_TX1_Lenth];	//发送缓冲
-u8 	xdata RX1_Buffer[COM_RX1_Lenth];	//接收缓冲
+u8 xdata RX1_Buffer[COM_RX1_Lenth];	//接收缓冲
 u8	xdata TX2_Buffer[COM_TX2_Lenth];	//发送缓冲
-u8 	xdata RX2_Buffer[COM_RX2_Lenth];	//接收缓冲
+u8 xdata RX2_Buffer[COM_RX2_Lenth];	//接收缓冲
 
 u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 {

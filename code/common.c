@@ -93,9 +93,10 @@ bit POF_Boot_Delay(void)
     }
 }
 
-#ifdef DEBUG
+
 static void PrintSameString(u8 *puts, unsigned char nSize)
 {
+#if DEBUG
 	unsigned char i = 0;
 	if(nSize > 0)
 	{ 
@@ -103,26 +104,24 @@ static void PrintSameString(u8 *puts, unsigned char nSize)
 			LOGD(puts);
 		LOGD("\r\n");
 	}
-}
 #endif
+}
 
-void PrintSystemInfoToSerial(void)
+void PrintSystemInfoToSerial(bool msterFlag)
 {	
-#ifdef DEBUG
+#if DEBUG
 	PrintSameString("*", 62);	   
 	PrintSameString(" ", 1);
-	LOGD("        湖北盛佳电器设备有限公司 - 智能自动合闸控制系统\r\n");
-	PrintSameString(" ", 1);
-	PrintSameString(" ", 1);
-	//LOGD("  Project Name  : Smart Switch Control System\r\n");
+	LOGD("  Project Name  : Smart Climb Control System\r\n");
 	LOGD("  Version No.   : Ver 1.0\r\n");
-	LOGD("  Designed Time : 2016-03-21\r\n");
-	//LOGD("  Auth Name     : Li Shuliang\r\n");
-	//LOGD("  Auth Email    : 313424410@qq.com\r\n");
-	//LOGD("  Project Owner : SJDQ\r\n");
-	LOGD("  Telephone     : 027 - 83520066 / 83567077\r\n");
+	LOGD("  Designed Time : 2021-01-01\r\n");
+	LOGD("  Auth Name     : Li Shuliang\r\n");
+	LOGD("  Auth Email    : 313424410@qq.com\r\n");
+	LOGD("  Project Owner : RuiLong Tech.\r\n");
+    if(msterFlag) LOGD("  Device Type   : Master\r\n");
+    else LOGD("  Device Type   : Slave\r\n");
 	PrintSameString(" ", 1);
-	LOGD("        All rights reserved (c)2016  http://www.sjdq.com/\r\n");
+	LOGD("  CopyRight     : All rights reserved @2021 by RuiLong Tech. \r\n");
 	PrintSameString(" ", 1);
     PrintSameString("*", 62);
 #endif

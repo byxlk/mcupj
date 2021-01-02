@@ -17,5 +17,6 @@ echo %dt%
 pause
 
 @echo on
+del /f /s /q ..\release_smart_pjst_*.hex
 copy Objects\smart_pjst.hex ..\release_smart_pjst_%dt%.hex
 dir ..\release_smart_pjst_%dt%.hex

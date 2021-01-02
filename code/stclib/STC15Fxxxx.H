@@ -13,6 +13,8 @@
 //#define MAIN_Fosc		 5529600L	//定义主时钟
 //#define MAIN_Fosc		24000000L	//定义主时钟
 
+#define Main_Fosc_KHZ	(MAIN_Fosc / 1000)
+
 /*********************************************************/
 
 /*  BYTE Registers  */
