@@ -102,6 +102,8 @@ sbit SLV_ADXL345_CLK            = P1^5;
 /* Common */
 void delay_us(unsigned int t);
 void delay_ms(unsigned int t);
+void delay500ms();
+bool isMasterDevice(void);
 void init_Watch_Dog(void);
 void Reboot_System(void);
 void PrintSystemInfoToSerial(bool msterFlag);
@@ -118,6 +120,7 @@ void SendByteData(unsigned char dat);
 void SendDataFrame(unsigned char Length,unsigned char *str);
 
 /* FZH181 */
+void display_test();
 /* SD3178 */
 /* PHASE CHECK */
 unsigned short checkACPowerPhaseSequence(void);

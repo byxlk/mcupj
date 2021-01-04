@@ -152,7 +152,7 @@ static void Timer_Config(void)
 	TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
 	TIM_InitStructure.TIM_Polity    = PolityLow;			//指定中断优先级, PolityHigh,PolityLow
 	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
-	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;		    //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;		//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
 	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
 	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (12 * 20));	//初值, 节拍为20HZ(50ms)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
@@ -161,7 +161,7 @@ static void Timer_Config(void)
     TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
 	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
 	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
-	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		    //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
 	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
 	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 1000));	//初值, 节拍为1000HZ(1ms)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
@@ -225,7 +225,7 @@ static void doRunning_MasterMain(void)
 
 	//watch dog init
     init_Watch_Dog();
-    
+    display_test();
     
 	while(1) {
         /* Step1: Check AC Power PhaseSequence */
@@ -233,9 +233,29 @@ static void doRunning_MasterMain(void)
         if((phaseSeq & 0xF000) == 0) {/* 反序 */
             /* Step1: Show alart led light */ 
             /* Step1: Flasher alart show phase info on LED display  */
-            continue;
+            //continue;
         }
 
+        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_OFF);
+        delay500ms();
+        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
+        delay500ms();
 	}	
 }
 
@@ -262,11 +282,6 @@ static void doRunning_SlaveMain(void)
 	while(1) {
 		NOP(5);
 	}
-}
-
-static bool isMasterDevice(void)
-{
-    return MASTER_INDICATOR_FLAG;
 }
 
 void main(void)

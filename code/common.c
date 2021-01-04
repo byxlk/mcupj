@@ -6,22 +6,22 @@
 u8	idata ID_idata[7];	//idata ??ID?
 u8	idata ID_code[7];	//code  ??ID?
 
-static void Delay_1us(void)		//@24.000MHz
+static void Delay_1us(void)		//@22.1184MHz
 {
 	unsigned char i;
 
-	_nop_();
-	_nop_();
 	i = 3;
 	while (--i);
 }
 
-static void Delay_1ms(void)		//@24.000MHz
+static void Delay_1ms(void)		//@22.1184MHz
 {
 	unsigned char i, j;
 
-	i = 24;
-	j = 85;
+	_nop_();
+	_nop_();
+	i = 22;
+	j = 128;
 	do
 	{
 		while (--j);
@@ -30,12 +30,30 @@ static void Delay_1ms(void)		//@24.000MHz
 
 void delay_us(unsigned int t)
 {
-    while(t--) Delay_1ms();
+    while(t--) Delay_1us();
 }
 
 void delay_ms(unsigned int t)
 {
-    while(t--) Delay_1us();
+    while(t--) Delay_1ms();
+}
+
+void delay500ms()		//@22.1184MHz
+{
+	unsigned char i, j, k;
+
+	_nop_();
+	_nop_();
+	i = 43;
+	j = 6;
+	k = 203;
+	do
+	{
+		do
+		{
+			while (--k);
+		} while (--j);
+	} while (--i);
 }
 
 void readCpuId()
@@ -46,6 +64,11 @@ void readCpuId()
 	
 	for(i=0, ip=IDATA_ID_START_ADDR; ip<(IDATA_ID_START_ADDR+7); ip++)	ID_idata[i++] = *ip;
 	for(i=0, cp=CODE_ID_START_ADDR;  cp<(CODE_ID_START_ADDR+7);  cp++)	ID_code[i++]  = *cp;
+}
+
+bool isMasterDevice(void)
+{
+    return MASTER_INDICATOR_FLAG;
 }
 
 void Reboot_System(void)
