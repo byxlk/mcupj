@@ -120,7 +120,8 @@ void SendByteData(unsigned char dat);
 void SendDataFrame(unsigned char Length,unsigned char *str);
 
 /* FZH181 */
-void display_test();
+void display_test(char Val);
+
 /* SD3178 */
 /* PHASE CHECK */
 unsigned short checkACPowerPhaseSequence(void);

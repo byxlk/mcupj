@@ -89,7 +89,8 @@ static void MSR_GPIO_Config(void)
 	GPIO_Inilize(GPIO_P4,&GPIO_InitStructure);	           //初始化
 
     // init output port status
-
+    FZH181_PIN_CLK = 1;
+    FZH181_PIN_STB = 1;
 }
 
 static void SLV_GPIO_Config(void)
@@ -207,6 +208,8 @@ static void SLV_External_Interrupt_Config(void)
 
 static void doRunning_MasterMain(void)
 {
+    unsigned char i = 0;
+
     /* Step1: */
     EA = 0; // disbale all interrupt
 
@@ -225,7 +228,6 @@ static void doRunning_MasterMain(void)
 
 	//watch dog init
     init_Watch_Dog();
-    display_test();
     
 	while(1) {
         /* Step1: Check AC Power PhaseSequence */
@@ -235,7 +237,7 @@ static void doRunning_MasterMain(void)
             /* Step1: Flasher alart show phase info on LED display  */
             //continue;
         }
-
+        display_test((i++) % 10);
         MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_OFF);
         MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_OFF);
         MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_OFF);
@@ -261,6 +263,7 @@ static void doRunning_MasterMain(void)
 
 static void doRunning_SlaveMain(void)
 {
+    unsigned char i = 0;
     EA = 0; // disbale all interrupt
 
     SLV_GPIO_Config();//GPIO init
@@ -273,14 +276,34 @@ static void doRunning_SlaveMain(void)
 
 	EA = 1; // enable all interrupt
 
-	PrintSystemInfoToSerial(FALSE);
-	LOGD("====> Slave Device Hardware Init Ok \r\n");
+	//PrintSystemInfoToSerial(FALSE);
+	//LOGD("====> Slave Device Hardware Init Ok \r\n");
 
 	//watch dog init
     init_Watch_Dog();
-	
+
 	while(1) {
-		NOP(5);
+        display_test((i++) % 10);
+		MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_OFF);
+        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_OFF);
+        delay500ms();
+        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_ON);
+        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
+        delay500ms();
 	}
 }
 
