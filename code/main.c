@@ -13,6 +13,7 @@
 
 /*************	本地变量声明	**************/
 static unsigned short phaseSeq = 0x0;
+static unsigned int iSecondCounter = 0;
 
 
 /*************	本地函数声明	**************/
@@ -89,6 +90,7 @@ static void MSR_GPIO_Config(void)
 	GPIO_Inilize(GPIO_P4,&GPIO_InitStructure);	           //初始化
 
     // init output port status
+    MSR_WARN_OUTPUT = 0;
     FZH181_PIN_CLK = 1;
     FZH181_PIN_STB = 1;
 }
@@ -126,7 +128,8 @@ static void SLV_GPIO_Config(void)
 	GPIO_Inilize(GPIO_P4,&GPIO_InitStructure);	           //初始化
 
 	// init output port status
-
+    FZH181_PIN_CLK = 1;
+    FZH181_PIN_STB = 1;
 }
 
 static void SLV_SPI_Config(void)
@@ -151,11 +154,11 @@ static void Timer_Config(void)
 {
 	TIM_InitTypeDef		TIM_InitStructure;					//结构定义
 	TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
-	TIM_InitStructure.TIM_Polity    = PolityLow;			//指定中断优先级, PolityHigh,PolityLow
+	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
 	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
 	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;		//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
 	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
-	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (12 * 20));	//初值, 节拍为20HZ(50ms)
+	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (12 * 100));	//初值, 节拍为100HZ(10ms)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
 	Timer_Inilize(Timer0,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
     
@@ -206,6 +209,67 @@ static void SLV_External_Interrupt_Config(void)
 	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
+#if TEST_MODE
+static void doRunning_HardwareTest(void)
+{
+    unsigned char i = 0;
+
+    /* Step1: */
+    EA = 0; // disbale all interrupt
+
+    if( isMasterDevice()) {
+        MSR_GPIO_Config();//GPIO init
+        MSR_External_Interrupt_Config();
+    } else {
+        SLV_GPIO_Config();//GPIO init
+        SLV_SPI_Config();
+        SLV_External_Interrupt_Config();
+    }
+
+    /* Debug Uart(P3.0/P3.1) and MAX485 Uart(P4.6/P4.7) init */
+    UART_config();
+	Timer_Config();//Timer init
+
+	EA = 1; // enable all interrupt
+
+	PrintSystemInfoToSerial(isMasterDevice()? TRUE : FALSE);
+	LOGD("====> %s Device Hardware Init Ok \r\n", isMasterDevice()? "Master" : "Slave");
+
+    //watch dog init
+    init_Watch_Dog();
+    
+    while(1) {
+        /* Check RS485 Communication */
+        
+        /* Check AC Power PhaseSequence  */
+        acPowerPhaseSequenceCheck_Test();
+
+        /* LED Light Hardware Check */
+        if(iSecondCounter % 100 == 0) {
+            ledLight_Test(LED_OFF);
+        } else if(iSecondCounter % 50 == 0) {
+            ledLight_Test(LED_ON);
+        }
+        
+        /* LED ShuMaGuan Hardware Check */
+        if(iSecondCounter % 100 == 0) {
+            LedDisplay_Test(8);
+        }
+        
+        /* SD3178 Hardware Check */
+        if( isMasterDevice()) {
+            
+        }
+        
+        /* HX710 Hardware Check */
+        if( ! isMasterDevice()) {
+            ;
+        }
+    }
+}
+
+#else
+
 static void doRunning_MasterMain(void)
 {
     unsigned char i = 0;
@@ -237,27 +301,7 @@ static void doRunning_MasterMain(void)
             /* Step1: Flasher alart show phase info on LED display  */
             //continue;
         }
-        display_test((i++) % 10);
-        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_OFF);
-        delay500ms();
-        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
-        delay500ms();
+        
 	}	
 }
 
@@ -276,59 +320,56 @@ static void doRunning_SlaveMain(void)
 
 	EA = 1; // enable all interrupt
 
-	//PrintSystemInfoToSerial(FALSE);
-	//LOGD("====> Slave Device Hardware Init Ok \r\n");
+	PrintSystemInfoToSerial(FALSE);
+	LOGD("====> Slave Device Hardware Init Ok \r\n");
 
 	//watch dog init
     init_Watch_Dog();
 
 	while(1) {
-        display_test((i++) % 10);
-		MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_OFF);
-        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_OFF);
-        delay500ms();
-        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, LED_ON);
-        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
-        delay500ms();
+       
 	}
 }
+#endif
 
 void main(void)
 {
 	// Check device is master or slave
     MSR_SLV_CheckGpioConfig();
+
+#if TEST_MODE
+    doRunning_HardwareTest();
+#else
 	if( isMasterDevice()) {
 		doRunning_MasterMain();
 	} else {
 		doRunning_SlaveMain();
 	}
-	
+#endif
+
 	//if run to here, system must be reboot now from user space
     Reboot_System();
 }
 
 /********************* Timer0中断函数************************/
 #define TIMER_VALUE (65536 - (MAIN_Fosc / (12 * 50)))
-void timer0_int (void) interrupt TIMER0_VECTOR //20ms@24.000MHz
+void timer0_int (void) interrupt TIMER0_VECTOR //10ms @22.1184MHz
 {
 	// process watch dog signal
 	WDT_CONTR &= 0x7F;
     WDT_CONTR |= 0x10;
 
+    /* Counter */
+    iSecondCounter++;
+    
+    /* Check Keyboard Scan per 50ms */
+    if(iSecondCounter % 5 == 0)
+        ledGetKeyCode();
+    
+    /* Update Dispaly by 25Hz */
+    //if(isNeedUpdateDisplayContent() || (iSecondCounter % 4 == 0)) {
+    //    updateDisplayContent();
+    //}
 
     /* 减小定时器误差 */
 	//TL0 = TIMER_VALUE % 256 - TL0;

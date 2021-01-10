@@ -1,6 +1,9 @@
 
 #include "USART.h"
 
+//stdio.h,stdarg.h??vsprintf????
+#include<stdio.h>
+#include<stdarg.h>
 
 COMx_Define	COM1,COM2;
 u8 xdata TX1_Buffer[COM_TX1_Lenth];	//发送缓冲
@@ -124,12 +127,18 @@ u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 
 
 /*************** 装载串口发送缓冲 *******************************/
-
 void TX1_write2buff(u8 dat)	//写入发送缓冲，指针+1
 {
     while(COM1.B_TX_busy);
-	TX1_Buffer[COM1.TX_write] = dat;	//装发送缓冲
-	if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
+    if(dat == '\n') {
+        TX1_Buffer[COM1.TX_write] = 0x0D;
+        if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
+        TX1_Buffer[COM1.TX_write] = 0x0A;	//装发送缓冲
+        if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
+    } else {
+        TX1_Buffer[COM1.TX_write] = dat;	//装发送缓冲
+        if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
+    }
 
 	if(COM1.B_TX_busy == 0)		//空闲
 	{  
@@ -153,7 +162,7 @@ void TX2_write2buff(u8 dat)	//写入发送缓冲，指针+1
 
 void PrintString1(u8 *puts)
 {
-    for (; *puts != 0;	puts++)  TX1_write2buff(*puts); 	//遇到停止符0结束
+    for (; ((*puts != 0) && (*puts != '\0'));	puts++)  TX1_write2buff(*puts); 	//遇到停止符0结束
 }
 
 void PrintString2(u8 *puts)
@@ -174,6 +183,23 @@ void PrintString(COMx_Define *COMx, u8 *puts)
 }
 */
 
+char putchar(char c)
+{
+    TX1_write2buff((unsigned char)c);
+    return c;
+}
+
+
+//void uart_printf(const char *fmt,...)
+//{
+//	va_list ap;
+//	char xdata string[128];//??????RAM,?????RAM,????????RAM??(???1024)
+	
+//	va_start(ap,fmt);
+//	vsprintf(string,fmt,ap);//???????sprintf??,?????,??????,????
+//	PrintString1(string);
+//	va_end(ap);
+//}
 
 /********************* UART1中断函数************************/
 void UART1_int (void) interrupt UART1_VECTOR

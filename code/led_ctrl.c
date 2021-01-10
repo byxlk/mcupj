@@ -32,3 +32,30 @@ void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
         default: break;
     }
 }
+
+#if TEST_MODE
+void ledLight_Test(bool StatusFlag)
+{
+    if( isMasterDevice()) {
+        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING,       StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE,         StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT,         StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT,       StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_POWER_START,        StatusFlag);
+    } else {
+        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_OVER_LOADING,       StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE,         StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_SYNCHRO_START,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_UP_INDICAT,         StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_DOWN_INDICAT,       StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_POWER_START,        StatusFlag);
+    }
+}
+#endif

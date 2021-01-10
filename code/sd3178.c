@@ -375,6 +375,7 @@ unsigned char RTCWriteSerial(unsigned char Address, unsigned char length,unsigne
 #if 0
 void RTC_display(void)
 {
+        LOGD("");
 		TxString("\r\n\r\n");
 		UartSend((RTC.hour >> 4) + '0');
 		UartSend((RTC.hour & 0x0f) + '0');
@@ -399,12 +400,11 @@ void RTC_display(void)
 }
 
 //////*****主程序演示*****//////
-void main()
+void sd3178_test(void)
 {
 	unsigned int		Bat;
 	unsigned char  	Batbit8, Batbit0_7;
 	
-	UartInit();//115200bps@11.0592MHz
 	I2CWriteDate(&RTC);	//设置时间演示，16年1月26日......
 //	WriteALARM();    	//设置报警中断时间演示
 //	SetDjs();		 	//设置倒计时中断演示
@@ -429,13 +429,7 @@ void main()
 		Batbit8 = I2CReadOneByte(Bat_bit8);		//读SD25XX的电池电量最高位
 		Batbit0_7 = I2CReadOneByte(Bat_Low8);		//读SD25XX的电池电量低八位
 		Bat = (Batbit8>>7)*255+Batbit0_7;				//计算电池电量值演示。如Bat=285则表示2.85V
-		TxString("  电池电压:");
-		UartSend(Bat/100 + '0');
-		TxString(".");
-		UartSend(Bat%100/10 + '0');
-		UartSend(Bat%10 + '0');
-		TxString("V\r\n");
-		
+		LOGD("  电池电压:%bd mV\n",Bat);
 		
 		unsigned char(1000);			//延时1000ms，1s读1次
 	}

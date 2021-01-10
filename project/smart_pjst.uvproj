@@ -178,10 +178,10 @@
             <RomSize>2</RomSize>
             <DataHold>0</DataHold>
             <XDataHold>0</XDataHold>
-            <UseOnchipRom>1</UseOnchipRom>
+            <UseOnchipRom>0</UseOnchipRom>
             <UseOnchipArithmetic>0</UseOnchipArithmetic>
             <UseMultipleDPTR>1</UseMultipleDPTR>
-            <UseOnchipXram>1</UseOnchipXram>
+            <UseOnchipXram>0</UseOnchipXram>
             <HadIRAM>1</HadIRAM>
             <HadXRAM>1</HadXRAM>
             <HadIROM>1</HadIROM>
@@ -460,6 +460,56 @@
               <FileName>spi.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\code\stclib\spi.c</FilePath>
+            </File>
+            <File>
+              <FileName>ADC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\ADC.h</FilePath>
+            </File>
+            <File>
+              <FileName>EEPROM.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\EEPROM.h</FilePath>
+            </File>
+            <File>
+              <FileName>Exti.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\Exti.h</FilePath>
+            </File>
+            <File>
+              <FileName>GPIO.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\GPIO.h</FilePath>
+            </File>
+            <File>
+              <FileName>PCA.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\PCA.h</FilePath>
+            </File>
+            <File>
+              <FileName>soft_uart.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\soft_uart.h</FilePath>
+            </File>
+            <File>
+              <FileName>spi.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\spi.h</FilePath>
+            </File>
+            <File>
+              <FileName>STC15Fxxxx.H</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\STC15Fxxxx.H</FilePath>
+            </File>
+            <File>
+              <FileName>timer.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\timer.h</FilePath>
+            </File>
+            <File>
+              <FileName>USART.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>..\code\stclib\USART.h</FilePath>
             </File>
           </Files>
         </Group>

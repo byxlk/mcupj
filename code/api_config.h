@@ -3,11 +3,14 @@
 
 #include "STC15Fxxxx.H"
 #include "USART.h"
+#include "stdio.h"
 
 /*********************************************************/
 
 #define DEBUG                      (1)	//开启调试模式
-#define LOGD                       PrintString1
+#define TEST_MODE                  (1)
+//#define LOGD                       uart_printf
+#define LOGD                       printf
 
 #define bool                       bit
 #define LED_ON                     (0)
@@ -102,6 +105,7 @@ sbit SLV_ADXL345_CLK            = P1^5;
 /* Common */
 void delay_us(unsigned int t);
 void delay_ms(unsigned int t);
+void delay5us(void)	;
 void delay500ms();
 bool isMasterDevice(void);
 void init_Watch_Dog(void);
@@ -120,7 +124,10 @@ void SendByteData(unsigned char dat);
 void SendDataFrame(unsigned char Length,unsigned char *str);
 
 /* FZH181 */
-void display_test(char Val);
+void ledGetKeyCode(void);
+void ledDisplayClose(unsigned char ledNo);
+void ledDisplayCtrl(unsigned char ledNo, char dispVal);
+
 
 /* SD3178 */
 /* PHASE CHECK */
@@ -133,6 +140,13 @@ void relayCtrl_XJ2(bool flag);
 void relayCtrl_SS2(bool flag);
 
 /* adxl345 */
+
+/* Hardware Test API interface */
+#if TEST_MODE
+void acPowerPhaseSequenceCheck_Test(void);
+void ledLight_Test(bool StatusFlag);
+void LedDisplay_Test(char Val);
+#endif
 
 /*********************************************************/
 #endif

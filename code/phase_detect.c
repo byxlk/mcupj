@@ -60,7 +60,7 @@ static void checkPhaseSeqCLost(void)
     }
 }
 
-unsigned int checkACPowerPhaseSequence(void)
+unsigned short checkACPowerPhaseSequence(void)
 {
     /* F:正序  0：反序 ABC：对应的P3.5 P3.6 P3.7 */
     unsigned short phaseSeq = 0xFABC;//0x0ACB
@@ -82,6 +82,16 @@ unsigned int checkACPowerPhaseSequence(void)
  
     return (phaseSeq);
 }
+
+#if TEST_MODE
+void acPowerPhaseSequenceCheck_Test(void)
+{
+        //phaseSeq = checkACPowerPhaseSequence();
+        //if((phaseSeq & 0xF000) == 0) {/* ?? */
+        //    LOGD("\n");
+        //}
+}
+#endif
 
 /********************* Timer1中断函数************************/
 /* 用于做三相电相序检测 */
