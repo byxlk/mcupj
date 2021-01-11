@@ -40,6 +40,25 @@
 #define SLV_LED_YCG_INDICAT        (17) //右超高
 #define SLV_LED_WARN_INDICAT       (18) //报警指示
 
+#define MSR_B1_K1S1_SYNC   (0X01) /*  */
+#define MSR_B1_K1S2_SET    (0X08) /*  */
+#define MSR_B2_K1S3_UP     (0X01) /*  */
+#define MSR_B2_K1S4_DOWN   (0X08) /*  */
+#define MSR_B3_K1S5_PAUSE  (0X01) /*  */
+#define MSR_B3_K1S6_CMUT   (0X08) /*  */
+#define MSR_B1_K2S1_STOP   (0x02) /*  */
+#define MSR_B1_K2S2_BOOT   (0x10) /*  */
+#define MSR_B2_K2S3_PRE    (0X02) /*  */
+#define MSR_B2_K2S4_UNLOAD (0X10) /*  */
+
+#define SLV_B1_K1S1_RSET   (0X01) /*  */
+#define SLV_B1_K1S2_SET    (0X08) /* 设置 */
+#define SLV_B2_K1S3_MUP    (0X01) /*  */
+#define SLV_B2_K1S4_MDOWN  (0X08) /*  */
+#define SLV_B3_K1S5_PAUSE  (0X01) /*  */
+#define SLV_B3_K1S6_CMUT   (0X08) /* 通信 */
+#define SLV_B1_K2S1_POFF   (0X02) /* 急停 */
+
 sbit FZH181_PIN_CLK             = P0^6;
 sbit FZH181_PIN_DIO             = P0^7;
 sbit FZH181_PIN_STB             = P0^5;

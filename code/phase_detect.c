@@ -86,10 +86,22 @@ unsigned short checkACPowerPhaseSequence(void)
 #if TEST_MODE
 void acPowerPhaseSequenceCheck_Test(void)
 {
-        //phaseSeq = checkACPowerPhaseSequence();
-        //if((phaseSeq & 0xF000) == 0) {/* ?? */
-        //    LOGD("\n");
-        //}
+    unsigned short phaseSeq = checkACPowerPhaseSequence();
+    if((phaseSeq & 0xF000) == 0) {/* ?? */
+        LOGD("Phase Sequence is right\n");
+    } else {
+        LOGD("Phase Sequence is not right\n");
+    }
+    
+    if((phaseSeq & 0x000F) == 0x0) {
+        LOGD("Phase C is loss ...\n");
+    }
+    if((phaseSeq & 0x00F0) == 0x0) {
+        LOGD("Phase B is loss ...\n");
+    }
+    if((phaseSeq & 0x0F00) == 0x0) {
+        LOGD("Phase A is loss ...\n");
+    }
 }
 #endif
 

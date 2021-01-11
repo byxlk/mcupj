@@ -2,13 +2,10 @@
 #include <intrins.h>			   //包含nop指令头文件
 #include "api_config.h"			   //MCU头文件
 
-#define MSR_KEY_BOOT (0x10)
-//#define MSR_KEY_UP ()
-//#define MSR_KEY_DOWN ()
-
 /********************定义数据*************************/
 static bool isUpdateDisplayContentNow = 0;
 static unsigned char dispBuf[14] = {0x0};
+static unsigned char lastDispBuf[10] = {0x0};
 static unsigned char KeyCode[5] = {0x0};							 //为存储按键值定义的数组
 
 /***************发送8bit数据，从低位开始**************/
@@ -118,13 +115,16 @@ void ledDisplayClose(unsigned char ledNo)
 {
     unsigned char tabCode = 0x00;
     unsigned short bufVal = (0x1 << ledNo);
-
+    
     /* Check ledNo */
     if(isMasterDevice()) {
         if(ledNo > 5 || ledNo < 0) return ;
     } else {
         if(ledNo > 9 || ledNo < 0) return ;
     }
+    
+    if(lastDispBuf[ledNo] == tabCode) return;
+    else lastDispBuf[ledNo] = tabCode;
     
     if(ledNo > 7) {
         dispBuf[1] &= ( ~(0x1 << (ledNo - 8)));
@@ -204,6 +204,9 @@ void ledDisplayCtrl(unsigned char ledNo, char dispVal)
         case '-': tabCode = 0x40; break;
         default: return; 
     }
+    
+    if(lastDispBuf[ledNo] == tabCode) return;
+    else lastDispBuf[ledNo] = tabCode;
 
     if(ledNo > 7) {
         if(tabCode & 0x1)   dispBuf[1] |= (0x1 << (ledNo - 8));
@@ -246,12 +249,10 @@ void ledDisplayCtrl(unsigned char ledNo, char dispVal)
 
 
 #if TEST_MODE
-static unsigned char tmp = 0;
+static unsigned int tmp = 0;
 void LedDisplay_Test(char Val)
 {
-    MSR_WARN_OUTPUT = ~MSR_WARN_OUTPUT;
     ledDisplayCtrl(0,Val);	    //上电显示0~6
-    MSR_WARN_OUTPUT = 0;
     ledDisplayCtrl(1,Val);
 
     ledDisplayCtrl(2,Val);
@@ -265,20 +266,36 @@ void LedDisplay_Test(char Val)
         ledDisplayCtrl(8,Val);
         ledDisplayCtrl(9,Val);
     }
-    //delay_ms(1);
 
     tmp++;
     if(isMasterDevice()) {
-        if(KeyCode[0] == 0x10) ledDisplayCtrl(0,'p');
+        if(KeyCode[0] == MSR_B1_K1S1_SYNC)   {ledDisplayCtrl(0,'p');}
+        if(KeyCode[0] == MSR_B1_K1S2_SET)    {ledDisplayCtrl(0,'E');}
+        if(KeyCode[0] == MSR_B1_K2S1_STOP)   {ledDisplayCtrl(0,'o');}
+        if(KeyCode[0] == MSR_B1_K2S2_BOOT)   {ledDisplayCtrl(0,'b');}
+        
+        if(KeyCode[1] == MSR_B2_K1S3_UP)     {ledDisplayCtrl(1,'-');}
+        if(KeyCode[1] == MSR_B2_K1S4_DOWN)   {ledDisplayCtrl(1,'D');}
+        if(KeyCode[1] == MSR_B2_K2S3_PRE)    {ledDisplayCtrl(1,'P');}
+        if(KeyCode[1] == MSR_B2_K2S4_UNLOAD) {ledDisplayCtrl(1,'L');}
+        
+        if(KeyCode[2] == MSR_B3_K1S5_PAUSE)  {ledDisplayCtrl(2,'P');}
+        if(KeyCode[2] == MSR_B3_K1S6_CMUT)   {ledDisplayCtrl(2,'C');}
     } else {
-        if((KeyCode[0] != 0x0)) {ledDisplayCtrl(0,(tmp) % 10);} //K1与KS1按键按下，数码管显示数字0~6
-    //     if((KeyCode[0] == 0x10)) {ledDisplayCtrl(1,(tmp) % 10);}  //K1与KS2按键按下，数码管显示关闭
-    //     if((KeyCode[0] == 0x01)) {ledDisplayCtrl(2,(tmp) % 10);}  //K1与KS2按键按下，数码管显示关闭
-    //    else if((KeyCode[0] == 0x00)) {ledDisplayCtrl(2,(tmp) % 2);}
+        if(KeyCode[0] == SLV_B1_K1S1_RSET)   {ledDisplayCtrl(0,'-');} //K1与KS1按键按下，数码管显示数字0~6
+        if(KeyCode[0] == SLV_B1_K1S2_SET)    {ledDisplayCtrl(0,'S');}
+        if(KeyCode[0] == SLV_B1_K2S1_POFF)   {ledDisplayCtrl(0,'P');}
+    
+        if(KeyCode[1] == SLV_B2_K1S3_MUP)    {ledDisplayCtrl(1,'P');}  //K1与KS2按键按下，数码管显示关闭
+        if(KeyCode[1] == SLV_B2_K1S4_MDOWN)  {ledDisplayCtrl(1,'-');} 
+
+        if(KeyCode[2] == SLV_B3_K1S5_PAUSE)  {ledDisplayCtrl(2,'P');}  //K1与KS2按键按下，数码管显示关闭
+        if(KeyCode[2] == SLV_B3_K1S6_CMUT)   {ledDisplayCtrl(2,'C');}
     }
 
-    LOGD("KeyCode[%04bu]: %02bx %02bx %02bx %02bx %02bx\r\n",tmp,
-            KeyCode[0],KeyCode[1],KeyCode[2],KeyCode[3],KeyCode[4]);
-    
+    if(KeyCode[0] || KeyCode[1] || KeyCode[2] || KeyCode[3] || KeyCode[4]) {
+        LOGD("KeyCode[%04bu]: %02bx %02bx %02bx %02bx %02bx\r\n",tmp,
+                KeyCode[0],KeyCode[1],KeyCode[2],KeyCode[3],KeyCode[4]);
+    }    
 }
 #endif

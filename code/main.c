@@ -242,7 +242,7 @@ static void doRunning_HardwareTest(void)
         /* Check RS485 Communication */
         
         /* Check AC Power PhaseSequence  */
-        acPowerPhaseSequenceCheck_Test();
+        //acPowerPhaseSequenceCheck_Test();
 
         /* LED Light Hardware Check */
         if(iSecondCounter % 100 == 0) {
