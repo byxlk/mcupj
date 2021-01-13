@@ -183,13 +183,17 @@ void ledDisplayCtrl(unsigned char ledNo, char dispVal)
         case   9: tabCode = 0x6F; break;
 
         case 'A': tabCode = 0x77; break;
+        case 'B': tabCode = 0x7F; break;
+        case 'b': tabCode = 0x7C; break;
         case 'c': tabCode = 0x58; break;
         case 'C': tabCode = 0x39; break;
+        case 'D':
         case 'd': tabCode = 0x5E; break;
         case 'E': tabCode = 0x79; break;
         case 'F': tabCode = 0x71; break;
         case 'H': tabCode = 0x76; break;
         case 'L': tabCode = 0x38; break;
+        case 'l': tabCode = 0x30; break;
         case 'n': tabCode = 0x37; break;
         case 'O':
         case 'o': tabCode = 0x5C; break;
@@ -197,6 +201,7 @@ void ledDisplayCtrl(unsigned char ledNo, char dispVal)
         case 'p': tabCode = 0x73; break;
         case 'Q':
         case 'q': tabCode = 0x67; break;
+        case 'S': tabCode = 0x6D; break;
         case 'U':
         case 'u': tabCode = 0x3E; break;
         case 'Y':
@@ -274,7 +279,7 @@ void LedDisplay_Test(char Val)
         if(KeyCode[0] == MSR_B1_K2S1_STOP)   {ledDisplayCtrl(0,'o');}
         if(KeyCode[0] == MSR_B1_K2S2_BOOT)   {ledDisplayCtrl(0,'b');}
         
-        if(KeyCode[1] == MSR_B2_K1S3_UP)     {ledDisplayCtrl(1,'-');}
+        if(KeyCode[1] == MSR_B2_K1S3_UP)     {ledDisplayCtrl(1,'U');}
         if(KeyCode[1] == MSR_B2_K1S4_DOWN)   {ledDisplayCtrl(1,'D');}
         if(KeyCode[1] == MSR_B2_K2S3_PRE)    {ledDisplayCtrl(1,'P');}
         if(KeyCode[1] == MSR_B2_K2S4_UNLOAD) {ledDisplayCtrl(1,'L');}

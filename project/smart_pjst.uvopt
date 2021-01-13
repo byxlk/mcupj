@@ -196,10 +196,10 @@
       <FileType>1</FileType>
       <tvExp>0</tvExp>
       <Focus>0</Focus>
-      <ColumnNumber>7</ColumnNumber>
+      <ColumnNumber>15</ColumnNumber>
       <tvExpOptDlg>0</tvExpOptDlg>
-      <TopLine>278</TopLine>
-      <CurrentLine>252</CurrentLine>
+      <TopLine>173</TopLine>
+      <CurrentLine>190</CurrentLine>
       <bDave2>0</bDave2>
       <PathWithFileName>..\code\fzh181.c</PathWithFileName>
       <FilenameWithoutPath>fzh181.c</FilenameWithoutPath>
