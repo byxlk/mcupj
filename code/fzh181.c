@@ -7,6 +7,7 @@ static bool isUpdateDisplayContentNow = 0;
 static unsigned char dispBuf[14] = {0x0};
 static unsigned char lastDispBuf[10] = {0x0};
 static unsigned char KeyCode[5] = {0x0};							 //为存储按键值定义的数组
+static unsigned short KeyBitNo = 0x0; /* 0: no key press 1: key press */
 
 /***************发送8bit数据，从低位开始**************/
 static void send_8bit( unsigned char dat )	 //发送8位数据,从低位开始
@@ -48,7 +49,7 @@ static void send_command(unsigned char com)  //发送命令字节
 }
 
 /****************读取按键值并存储*******************/
-void ledGetKeyCode(void)			  //读取5字节按键值并存入数组KEY[],从低字节、低位开始
+static void getKeyCode(void)			  //读取5字节按键值并存入数组KEY[],从低字节、低位开始
 {
     unsigned char i;
     unsigned char j;
@@ -56,7 +57,7 @@ void ledGetKeyCode(void)			  //读取5字节按键值并存入数组KEY[],从低
     //KeyCode[0] = KeyCode[1] = KeyCode[2] = 0;
     //KeyCode[3] = KeyCode[4] = 0;
     
-    if(isUpdateDisplayContentNow) return;
+    //if(isUpdateDisplayContentNow) return;
     
     send_command(0x42);		          //发送读按键命令
     delay_us(30);
@@ -76,7 +77,7 @@ void ledGetKeyCode(void)			  //读取5字节按键值并存入数组KEY[],从低
 
             if(FZH181_PIN_DIO == 1)
             {
-                KeyCode[j] = KeyCode[j]|0x80;
+                KeyCode[j] = KeyCode[j] | 0x80;
             }
             delay_us(10);
         }
@@ -93,8 +94,6 @@ static void updateDisplayContent(void)   //显示函数，1~10位数码管显示
 {
     unsigned char i;
 
-    isUpdateDisplayContentNow = 1;
-    
     send_command(0x03);     //设置显示模式，7位10段模式
     send_command(0x40);	    //设置数据命令，采用地址自动加1模式
     send_command(0xc0);	    //设置显示地址，从00H开始
@@ -109,6 +108,42 @@ static void updateDisplayContent(void)   //显示函数，1~10位数码管显示
     FZH181_PIN_STB=1;
 
     isUpdateDisplayContentNow = 0;
+
+}
+
+void displayContentUpdateAndKeyScanService(void)
+{
+    /* Update display content after buffer update */
+    if(isUpdateDisplayContentNow) {
+        updateDisplayContent();
+    }
+
+    /* Process Key Code */
+    getKeyCode();
+    if(isMasterDevice()) {
+        if(KeyCode[0] == (MSR_B1_K1S1_SYNC && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(KeyCode[0] == (MSR_B1_K1S2_SET && 0x0FF))    { KeyBitNo |= 0x1; }
+        if(KeyCode[0] == (MSR_B1_K2S1_STOP && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(KeyCode[0] == (MSR_B1_K2S2_BOOT && 0x0FF))   { KeyBitNo |= 0x1; }
+        
+        if(KeyCode[1] == (MSR_B2_K1S3_UP && 0x0FF))     { KeyBitNo |= 0x1; }
+        if(KeyCode[1] == (MSR_B2_K1S4_DOWN && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(KeyCode[1] == (MSR_B2_K2S3_PRE && 0x0FF))    { KeyBitNo |= 0x1; }
+        if(KeyCode[1] == (MSR_B2_K2S4_UNLOAD && 0x0FF)) { KeyBitNo |= 0x1; }
+        
+        if(KeyCode[2] == (MSR_B3_K1S5_PAUSE && 0x0FF))  { KeyBitNo |= 0x1; }
+        if(KeyCode[2] == (MSR_B3_K1S6_CMUT && 0x0FF))   { KeyBitNo |= 0x1; }
+    } else {
+        if(KeyCode[0] == (SLV_B1_K1S1_RSET && 0x0FF))   { KeyBitNo |= 0x1; } //K1与KS1按键按下，数码管显示数字0~6
+        if(KeyCode[0] == (SLV_B1_K1S2_SET && 0x0FF))    { KeyBitNo |= 0x1; }
+        if(KeyCode[0] == (SLV_B1_K2S1_POFF && 0x0FF))   { KeyBitNo |= 0x1; }
+    
+        if(KeyCode[1] == (SLV_B2_K1S3_MUP && 0x0FF))    { KeyBitNo |= 0x1; } //K1与KS2按键按下，数码管显示关闭
+        if(KeyCode[1] == (SLV_B2_K1S4_MDOWN && 0x0FF))  { KeyBitNo |= 0x1; }
+
+        if(KeyCode[2] == (SLV_B3_K1S5_PAUSE && 0x0FF))  { KeyBitNo |= 0x1; } //K1与KS2按键按下，数码管显示关闭
+        if(KeyCode[2] == (SLV_B3_K1S6_CMUT && 0x0FF))   { KeyBitNo |= 0x1; }
+    }
 }
 
 void ledDisplayClose(unsigned char ledNo)
@@ -144,7 +179,8 @@ void ledDisplayClose(unsigned char ledNo)
         dispBuf[12] &= ( ~(0x1 << ledNo));
     }
 
-    updateDisplayContent(); /* update display content */
+    isUpdateDisplayContentNow = 1;
+    //updateDisplayContent(); /* update display content */
 }
 
 /* ledNo: Master = 0 -5  Slave = 0 -9 */
@@ -245,7 +281,9 @@ void ledDisplayCtrl(unsigned char ledNo, char dispVal)
         else                dispBuf[12] &= ( ~(0x1 << ledNo));
     }
 
-    updateDisplayContent(); /* update display content */
+    //while(isUpdateDisplayContentNow) ;
+    isUpdateDisplayContentNow = 1;
+    //updateDisplayContent(); /* update display content */
 
     return ;
 }
@@ -271,8 +309,10 @@ void LedDisplay_Test(char Val)
         ledDisplayCtrl(8,Val);
         ledDisplayCtrl(9,Val);
     }
+}
 
-    tmp++;
+bool LedKeyScan_Test(void)
+{
     if(isMasterDevice()) {
         if(KeyCode[0] == MSR_B1_K1S1_SYNC)   {ledDisplayCtrl(0,'p');}
         if(KeyCode[0] == MSR_B1_K1S2_SET)    {ledDisplayCtrl(0,'E');}
@@ -299,8 +339,11 @@ void LedDisplay_Test(char Val)
     }
 
     if(KeyCode[0] || KeyCode[1] || KeyCode[2] || KeyCode[3] || KeyCode[4]) {
-        LOGD("KeyCode[%04bu]: %02bx %02bx %02bx %02bx %02bx\r\n",tmp,
-                KeyCode[0],KeyCode[1],KeyCode[2],KeyCode[3],KeyCode[4]);
-    }    
+        //LOGD("KeyCode[%04bu]: %02bx %02bx %02bx %02bx %02bx\r\n",tmp++,
+        //        KeyCode[0],KeyCode[1],KeyCode[2],KeyCode[3],KeyCode[4]);
+        return TRUE;
+    } else {
+        return FALSE;
+    }
 }
 #endif

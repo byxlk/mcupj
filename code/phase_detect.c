@@ -115,10 +115,6 @@ void timer1_int (void) interrupt TIMER1_VECTOR
     checkPhaseSeqCLost();   
 }
 
-//sbit PWR_PHASE_PIN_A                = P3^5; //
-//sbit PWR_PHASE_PIN_B                = P3^6; //INT2
-//sbit PWR_PHASE_PIN_C                = P3^7; //INT3
-
 /********************* INT3ÖÐ¶Ïº¯Êý *************************/
 void Ext_INT3 (void) interrupt INT3_VECTOR
 {

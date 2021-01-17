@@ -40,3 +40,11 @@ unsigned long getHX710Count(unsigned char iNo)
     
     return (iCount);
 }
+
+#if TEST_MODE
+void hx710_Test(void)
+{
+
+}
+
+#endif

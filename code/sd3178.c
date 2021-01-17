@@ -65,13 +65,13 @@ S_Time  RTC = {0x55,0x59,0x14,0x02,0x26,0x01,0x16};
 //bool I2CWriteOneByte(unsigned char add, unsigned char date);//写一字节
 
 /*********I2C延时4us***********/
-void I2CWait(void)//4us  @11.0592MHz
+void I2CWait(void)//4us  @22.1184MHz
 {	
 	unsigned char i;
 
 	_nop_();
 	_nop_();
-	i = 8;
+	i = 19;
 	while (--i);
 }
 
@@ -82,7 +82,9 @@ static bool I2CStart(void)
 	I2CWait();
 	MSR_SD3178_SCK = 1;
 	I2CWait();
-	if(!MSR_SD3178_SDA)return FALSE;	//SDA线为低电平则总线忙,退出
+
+	if(!MSR_SD3178_SDA) return FALSE;	//SDA线为低电平则总线忙,退出
+
 	MSR_SD3178_SDA = 0;
 	I2CWait();
 	MSR_SD3178_SCK = 0;
@@ -255,7 +257,7 @@ bool I2CReadDate(S_Time	*psRTC)
 }
 
 /******写RTC实时数据寄存器******/
-bool I2CWriteDate(S_Time	*psRTC)	//写时间操作要求一次对实时时间寄存器(00H~06H)依次写入，
+bool I2CWriteDate(S_Time *psRTC)	//写时间操作要求一次对实时时间寄存器(00H~06H)依次写入，
 {                               //不可以单独对7个时间数据中的某一位进行写操作,否则可能会引起时间数据的错误进位. 
                                 //要修改其中某一个数据 , 应一次性写入全部 7 个实时时钟数据.
 
@@ -372,35 +374,9 @@ unsigned char RTCWriteSerial(unsigned char Address, unsigned char length,unsigne
 	WriteRTC_Disable();
 	return	TRUE;
 }
-#if 0
-void RTC_display(void)
-{
-        LOGD("");
-		TxString("\r\n\r\n");
-		UartSend((RTC.hour >> 4) + '0');
-		UartSend((RTC.hour & 0x0f) + '0');
-		TxString("时");
-		UartSend((RTC.minute >> 4) + '0');
-		UartSend((RTC.minute & 0x0f) + '0');
-		TxString("分");
-		UartSend((RTC.second >> 4) + '0');
-		UartSend((RTC.second & 0x0f) + '0');
-		TxString("秒  ");
-
-		UartSend((RTC.year >> 4) + '0');
-		UartSend((RTC.year & 0x0f) + '0');
-		TxString("年");
-		UartSend((RTC.month >> 4) + '0');
-		UartSend((RTC.month & 0x0f) + '0');
-		TxString("月");
-		UartSend((RTC.day >> 4) + '0');
-		UartSend((RTC.day & 0x0f) + '0');
-		TxString("日  星期");
-		UartSend(RTC.week + '0');
-}
-
+#if TEST_MODE
 //////*****主程序演示*****//////
-void sd3178_test(void)
+void rtcDisplay_Test(void)
 {
 	unsigned int		Bat;
 	unsigned char  	Batbit8, Batbit0_7;
@@ -421,17 +397,24 @@ void sd3178_test(void)
 #endif	
 	WriteRTC_Disable();
 	
-	while(1)
+	//while(1)
 	{
 		I2CReadDate(&RTC);		//读时间演示
-		RTC_display();	//把时间数据从串口打出来显示
 
 		Batbit8 = I2CReadOneByte(Bat_bit8);		//读SD25XX的电池电量最高位
 		Batbit0_7 = I2CReadOneByte(Bat_Low8);		//读SD25XX的电池电量低八位
 		Bat = (Batbit8>>7)*255+Batbit0_7;				//计算电池电量值演示。如Bat=285则表示2.85V
-		LOGD("  电池电压:%bd mV\n",Bat);
-		
-		unsigned char(1000);			//延时1000ms，1s读1次
+
+		//把时间数据从串口打出来显示
+        LOGD("[Time] %01bd%01bd/%01bd%01bd/%01bd%01bd [Week]%01bd %01bd%01bd:%01bd%01bd:%01bd%01bd [BatVolt] %bdmV\r\n",
+            (RTC.year >> 4),(RTC.year & 0x0f),
+            (RTC.month >> 4),(RTC.month & 0x0f),
+            (RTC.day >> 4),(RTC.day & 0x0f),
+            (RTC.week),
+            (RTC.hour >> 4),(RTC.hour & 0x0f),
+            (RTC.minute >> 4),(RTC.minute & 0x0f),
+            (RTC.second >> 4),(RTC.second & 0x0f),
+            Bat);
 	}
 
 }

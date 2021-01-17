@@ -14,6 +14,7 @@
 /*************	本地变量声明	**************/
 static unsigned short phaseSeq = 0x0;
 static unsigned int iSecondCounter = 0;
+static bool bMSR_PowerKeyLock = 1; /* if power key is lock,can't do power up */
 
 
 /*************	本地函数声明	**************/
@@ -93,6 +94,9 @@ static void MSR_GPIO_Config(void)
     MSR_WARN_OUTPUT = 0;
     FZH181_PIN_CLK = 1;
     FZH181_PIN_STB = 1;
+    
+    /* Off All Led */
+    MSR_LedStatusCtrl(MSR_LED_ALL, LED_OFF);
 }
 
 static void SLV_GPIO_Config(void)
@@ -130,6 +134,9 @@ static void SLV_GPIO_Config(void)
 	// init output port status
     FZH181_PIN_CLK = 1;
     FZH181_PIN_STB = 1;
+    
+    /* Off All Led */
+    SLV_LedStatusCtrl(SLV_LED_ALL, LED_OFF);
 }
 
 static void SLV_SPI_Config(void)
@@ -252,18 +259,22 @@ static void doRunning_HardwareTest(void)
         }
         
         /* LED ShuMaGuan Hardware Check */
+        if(iSecondCounter % 8 == 0) {
+            LedKeyScan_Test();
+        }
         if(iSecondCounter % 100 == 0) {
             LedDisplay_Test(8);
         }
         
-        /* SD3178 Hardware Check */
         if( isMasterDevice()) {
-            
-        }
-        
-        /* HX710 Hardware Check */
-        if( ! isMasterDevice()) {
-            ;
+            /* SD3178 Hardware Check */
+            if(iSecondCounter % 1000 == 0) 
+                rtcDisplay_Test();
+        } else {
+            /* HX710 Hardware Check */
+            if(iSecondCounter % 1000 == 0) 
+                hx710_Test();
+            adxl345_Test();
         }
     }
 }
@@ -296,11 +307,23 @@ static void doRunning_MasterMain(void)
 	while(1) {
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
-        if((phaseSeq & 0xF000) == 0) {/* 反序 */
-            /* Step1: Show alart led light */ 
-            /* Step1: Flasher alart show phase info on LED display  */
-            //continue;
+        if(phaseSeq == 0xFABC) {
+            MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
+            MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
+            MSR_relayCtrl_PWR(ON);
+            MSR_relayCtrl_WAR(OFF);
+            bMSR_PowerKeyLock = 0;// unlock power key
+        } else { /* 反序 或者 缺相*/
+            MSR_LedFlashCtrl(MSR_LED_POWER_START);
+            MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
+            MSR_relayCtrl_PWR(OFF);
+            MSR_relayCtrl_WAR(ON);
+            bMSR_PowerKeyLock = 1;
+            continue;
         }
+        
+        /* Step2: Check Key scan process */
+        
         
 	}	
 }
@@ -362,9 +385,12 @@ void timer0_int (void) interrupt TIMER0_VECTOR //10ms @22.1184MHz
     /* Counter */
     iSecondCounter++;
     
+    /* Control Led Status */
+    ledStatusManageService(iSecondCounter);
+    
     /* Check Keyboard Scan per 50ms */
     if(iSecondCounter % 5 == 0)
-        ledGetKeyCode();
+        displayContentUpdateAndKeyScanService();
     
     /* Update Dispaly by 25Hz */
     //if(isNeedUpdateDisplayContent() || (iSecondCounter % 4 == 0)) {

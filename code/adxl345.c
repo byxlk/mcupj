@@ -183,3 +183,10 @@ short ADXL345_Get_Angle(float x,float y,float z,u8 dir)
 }
 
 #endif
+
+#if TEST_MODE
+void adxl345_Test(void)
+{
+
+}
+#endif
