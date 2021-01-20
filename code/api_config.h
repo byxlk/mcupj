@@ -44,24 +44,24 @@
 #define SLV_LED_ZCG_INDICAT        (19) //左超高
 #define SLV_LED_ALL                (20)  /* Off All Led */
 
-#define MSR_B1_K1S1_SYNC           (0x101) /*  */
-#define MSR_B1_K1S2_SET            (0x208) /*  */
-#define MSR_B2_K1S3_UP             (0x301) /*  */
-#define MSR_B2_K1S4_DOWN           (0x408) /*  */
-#define MSR_B3_K1S5_PAUSE          (0x501) /*  */
-#define MSR_B3_K1S6_CMUT           (0x608) /*  */
-#define MSR_B1_K2S1_STOP           (0x702) /*  */
-#define MSR_B1_K2S2_BOOT           (0x810) /*  */
-#define MSR_B2_K2S3_PRE            (0x902) /*  */
-#define MSR_B2_K2S4_UNLOAD         (0xa10) /*  */
+#define MSR_KEY_SYNC           (0x0001) /* 同步 */
+#define MSR_KEY_SET            (0x0002) /* 设置 */
+#define MSR_KEY_UP             (0x0004) /* 上升 */
+#define MSR_KEY_DOWN           (0x0008) /* 下降 */
+#define MSR_KEY_PAUSE          (0x0010) /* 暂停 */
+#define MSR_KEY_CMUT           (0x0020) /* 通讯 */
+#define MSR_KEY_STOP           (0x0040) /* 停止 */
+#define MSR_KEY_BOOT           (0x0080) /* 启动 */
+#define MSR_KEY_PRE            (0x0100) /* 预紧 */
+#define MSR_KEY_UNLOAD         (0x0200) /* 卸载 */
 
-#define SLV_B1_K1S1_RSET           (0X101) /*  */
-#define SLV_B1_K1S2_SET            (0X208) /* 设置 */
-#define SLV_B2_K1S3_MUP            (0X301) /*  */
-#define SLV_B2_K1S4_MDOWN          (0X408) /*  */
-#define SLV_B3_K1S5_PAUSE          (0X501) /*  */
-#define SLV_B3_K1S6_CMUT           (0X608) /* 通信 */
-#define SLV_B1_K2S1_POFF           (0X702) /* 急停 */
+#define SLV_KEY_RSET           (0x0001) /* 休眠 */
+#define SLV_KEY_SET            (0x0002) /* 设置 */
+#define SLV_KEY_MUP            (0x0004) /* 上升 */
+#define SLV_KEY_MDOWN          (0x0008) /* 下降 */
+#define SLV_KEY_PAUSE          (0x0010) /* 暂停 */
+#define SLV_KEY_CMUT           (0x0020) /* 通信 */
+#define SLV_KEY_POFF           (0x0040) /* 急停 */
 
 sbit FZH181_PIN_CLK             = P0^6;
 sbit FZH181_PIN_DIO             = P0^7;
@@ -150,9 +150,11 @@ void SendByteData(unsigned char dat);
 void SendDataFrame(unsigned char Length,unsigned char *str);
 
 /* FZH181 */
-void displayContentUpdateAndKeyScanService(void);
 void ledDisplayClose(unsigned char ledNo);
 void ledDisplayCtrl(unsigned char ledNo, char dispVal);
+void ledDisplayFlash(unsigned char ledNo);
+unsigned short getKeyCode(void);
+void clrKeyStatus(unsigned short sKey);
 
 
 /* SD3178 */

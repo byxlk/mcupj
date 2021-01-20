@@ -177,6 +177,15 @@ static void Timer_Config(void)
 	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 1000));	//初值, 节拍为1000HZ(1ms)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
 	Timer_Inilize(Timer1,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
+    
+    TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
+	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
+	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
+	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		    //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
+	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 20));	//初值, 节拍为20HZ(50ms)
+	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
+	Timer_Inilize(Timer2,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
 }
 
 static void MSR_External_Interrupt_Config(void)
@@ -284,6 +293,7 @@ static void doRunning_HardwareTest(void)
 static void doRunning_MasterMain(void)
 {
     unsigned char i = 0;
+    unsigned short keyCode = 0x0;
 
     /* Step1: */
     EA = 0; // disbale all interrupt
@@ -308,22 +318,40 @@ static void doRunning_MasterMain(void)
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
         if(phaseSeq == 0xFABC) {
-            MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
             MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
-            MSR_relayCtrl_PWR(ON);
-            MSR_relayCtrl_WAR(OFF);
-            bMSR_PowerKeyLock = 0;// unlock power key
+            //bMSR_PowerKeyLock = 0;// unlock power key
+            if((getKeyCode() & MSR_LED_POWER_START) == 0) {
+                continue;
+            } else {
+                MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
+                MSR_relayCtrl_PWR(ON);
+                MSR_relayCtrl_WAR(OFF);
+            }
         } else { /* 反序 或者 缺相*/
-            MSR_LedFlashCtrl(MSR_LED_POWER_START);
-            MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
             MSR_relayCtrl_PWR(OFF);
             MSR_relayCtrl_WAR(ON);
-            bMSR_PowerKeyLock = 1;
+            MSR_LedFlashCtrl(MSR_LED_POWER_START);
+            clrKeyStatus(MSR_KEY_BOOT);
+            MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
+            //bMSR_PowerKeyLock = 1;
             continue;
         }
         
         /* Step2: Check Key scan process */
+        if((getKeyCode() & MSR_KEY_STOP) != 0){
+            MSR_relayCtrl_PWR(OFF);
+            MSR_relayCtrl_WAR(ON);
+            MSR_LedFlashCtrl(MSR_LED_POWER_START);
+            clrKeyStatus(MSR_KEY_BOOT);
+        }
+        if((getKeyCode() & MSR_KEY_CMUT) != 0){
+            if((getKeyCode() & MSR_KEY_SET) != 0) {
+                /* Wait recive Slave device upload device No. and address  */
+                MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+            }
+        }
         
+        /* Step3: Update display content */
         
 	}	
 }
@@ -350,7 +378,14 @@ static void doRunning_SlaveMain(void)
     init_Watch_Dog();
 
 	while(1) {
-       
+        /* Step1: Check AC Power PhaseSequence */
+        phaseSeq = checkACPowerPhaseSequence();
+        if(phaseSeq == 0xFABC) {
+            //MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
+        } else { /* 反序 或者 缺相*/
+            //MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
+            continue;
+        }
 	}
 }
 #endif
@@ -388,15 +423,6 @@ void timer0_int (void) interrupt TIMER0_VECTOR //10ms @22.1184MHz
     /* Control Led Status */
     ledStatusManageService(iSecondCounter);
     
-    /* Check Keyboard Scan per 50ms */
-    if(iSecondCounter % 5 == 0)
-        displayContentUpdateAndKeyScanService();
-    
-    /* Update Dispaly by 25Hz */
-    //if(isNeedUpdateDisplayContent() || (iSecondCounter % 4 == 0)) {
-    //    updateDisplayContent();
-    //}
-
     /* 减小定时器误差 */
 	//TL0 = TIMER_VALUE % 256 - TL0;
 	//TH0 = TIMER_VALUE / 256 - TH0;

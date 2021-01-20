@@ -3,11 +3,31 @@
 #include "api_config.h"			   //MCU头文件
 
 /********************定义数据*************************/
+#define MSR_B1_K1S1_SYNC           (0x01) /* 同步 */
+#define MSR_B1_K1S2_SET            (0x08) /* 设置 */
+#define MSR_B2_K1S3_UP             (0x01) /* 上升 */
+#define MSR_B2_K1S4_DOWN           (0x08) /* 下降 */
+#define MSR_B3_K1S5_PAUSE          (0x01) /* 暂停 */
+#define MSR_B3_K1S6_CMUT           (0x08) /* 通讯 */
+#define MSR_B1_K2S1_STOP           (0x02) /* 停止 */
+#define MSR_B1_K2S2_BOOT           (0x10) /* 启动 */
+#define MSR_B2_K2S3_PRE            (0x02) /* 预紧 */
+#define MSR_B2_K2S4_UNLOAD         (0x10) /* 卸载 */
+
+#define SLV_B1_K1S1_RSET           (0x01) /* 休眠 */
+#define SLV_B1_K1S2_SET            (0x08) /* 设置 */
+#define SLV_B2_K1S3_MUP            (0x01) /* 上升 */
+#define SLV_B2_K1S4_MDOWN          (0x08) /* 下降 */
+#define SLV_B3_K1S5_PAUSE          (0x01) /* 暂停 */
+#define SLV_B3_K1S6_CMUT           (0x08) /* 通信 */
+#define SLV_B1_K2S1_POFF           (0x02) /* 急停 */
+
 static bool isUpdateDisplayContentNow = 0;
 static unsigned char dispBuf[14] = {0x0};
 static unsigned char lastDispBuf[10] = {0x0};
 static unsigned char KeyCode[5] = {0x0};							 //为存储按键值定义的数组
 static unsigned short KeyBitNo = 0x0; /* 0: no key press 1: key press */
+static unsigned short FlashBitNo = 0x0;
 
 /***************发送8bit数据，从低位开始**************/
 static void send_8bit( unsigned char dat )	 //发送8位数据,从低位开始
@@ -49,7 +69,7 @@ static void send_command(unsigned char com)  //发送命令字节
 }
 
 /****************读取按键值并存储*******************/
-static void getKeyCode(void)			  //读取5字节按键值并存入数组KEY[],从低字节、低位开始
+static void getKeyCodeFromChipReg(void)			  //读取5字节按键值并存入数组KEY[],从低字节、低位开始
 {
     unsigned char i;
     unsigned char j;
@@ -110,39 +130,45 @@ static void updateDisplayContent(void)   //显示函数，1~10位数码管显示
     isUpdateDisplayContentNow = 0;
 
 }
-
-void displayContentUpdateAndKeyScanService(void)
+unsigned short getKeyCode(void)
 {
-    /* Update display content after buffer update */
-    if(isUpdateDisplayContentNow) {
-        updateDisplayContent();
-    }
+    return KeyBitNo;
+}
 
-    /* Process Key Code */
-    getKeyCode();
+void clrKeyStatus(unsigned short sKey)
+{
     if(isMasterDevice()) {
-        if(KeyCode[0] == (MSR_B1_K1S1_SYNC && 0x0FF))   { KeyBitNo |= 0x1; }
-        if(KeyCode[0] == (MSR_B1_K1S2_SET && 0x0FF))    { KeyBitNo |= 0x1; }
-        if(KeyCode[0] == (MSR_B1_K2S1_STOP && 0x0FF))   { KeyBitNo |= 0x1; }
-        if(KeyCode[0] == (MSR_B1_K2S2_BOOT && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(sKey == MSR_KEY_SYNC)   { KeyBitNo &= ~(MSR_KEY_SYNC); }
+        if(sKey == MSR_KEY_SET)    { KeyBitNo &= ~(MSR_KEY_SET); }
+        if(sKey == MSR_KEY_STOP)   { KeyBitNo &= ~(MSR_KEY_STOP); }
+        if(sKey == MSR_KEY_BOOT)   { KeyBitNo &= ~(MSR_KEY_BOOT); }
         
-        if(KeyCode[1] == (MSR_B2_K1S3_UP && 0x0FF))     { KeyBitNo |= 0x1; }
-        if(KeyCode[1] == (MSR_B2_K1S4_DOWN && 0x0FF))   { KeyBitNo |= 0x1; }
-        if(KeyCode[1] == (MSR_B2_K2S3_PRE && 0x0FF))    { KeyBitNo |= 0x1; }
-        if(KeyCode[1] == (MSR_B2_K2S4_UNLOAD && 0x0FF)) { KeyBitNo |= 0x1; }
+        if(sKey == MSR_KEY_UP)     { KeyBitNo &= ~(MSR_KEY_UP); }
+        if(sKey == MSR_KEY_DOWN)   { KeyBitNo &= ~(MSR_KEY_DOWN); }
+        if(sKey == MSR_KEY_PRE)    { KeyBitNo &= ~(MSR_KEY_PRE); }
+        if(sKey == MSR_KEY_UNLOAD) { KeyBitNo &= ~(MSR_KEY_UNLOAD); }
         
-        if(KeyCode[2] == (MSR_B3_K1S5_PAUSE && 0x0FF))  { KeyBitNo |= 0x1; }
-        if(KeyCode[2] == (MSR_B3_K1S6_CMUT && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(sKey == MSR_KEY_PAUSE)  { KeyBitNo &= ~(MSR_KEY_PAUSE); }
+        if(sKey == MSR_KEY_CMUT)   { KeyBitNo &= ~(MSR_KEY_CMUT); }
     } else {
-        if(KeyCode[0] == (SLV_B1_K1S1_RSET && 0x0FF))   { KeyBitNo |= 0x1; } //K1与KS1按键按下，数码管显示数字0~6
-        if(KeyCode[0] == (SLV_B1_K1S2_SET && 0x0FF))    { KeyBitNo |= 0x1; }
-        if(KeyCode[0] == (SLV_B1_K2S1_POFF && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(sKey == SLV_KEY_RSET)   { KeyBitNo &= ~(SLV_KEY_RSET); } //K1与KS1按键按下，数码管显示数字0~6
+        if(sKey == SLV_KEY_SET)    { KeyBitNo &= ~(SLV_KEY_SET); }
+        if(sKey == SLV_KEY_POFF)   { KeyBitNo &= ~(SLV_KEY_POFF); }
     
-        if(KeyCode[1] == (SLV_B2_K1S3_MUP && 0x0FF))    { KeyBitNo |= 0x1; } //K1与KS2按键按下，数码管显示关闭
-        if(KeyCode[1] == (SLV_B2_K1S4_MDOWN && 0x0FF))  { KeyBitNo |= 0x1; }
+        if(sKey == SLV_KEY_MUP)    { KeyBitNo &= ~(SLV_KEY_MUP); } //K1与KS2按键按下，数码管显示关闭
+        if(sKey == SLV_KEY_MDOWN)  { KeyBitNo &= ~(SLV_KEY_MDOWN); }
 
-        if(KeyCode[2] == (SLV_B3_K1S5_PAUSE && 0x0FF))  { KeyBitNo |= 0x1; } //K1与KS2按键按下，数码管显示关闭
-        if(KeyCode[2] == (SLV_B3_K1S6_CMUT && 0x0FF))   { KeyBitNo |= 0x1; }
+        if(sKey == SLV_KEY_PAUSE)  { KeyBitNo &= ~(SLV_KEY_PAUSE); } //K1与KS2按键按下，数码管显示关闭
+        if(sKey == SLV_KEY_CMUT)   { KeyBitNo &= ~(SLV_KEY_CMUT); }
+    }
+}
+
+void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag)
+{
+    if(bFlag) {
+        FlashBitNo |= (0x1 << ledNo);
+    } else {
+        FlashBitNo &= ~(0x1 << ledNo);
     }
 }
 
@@ -347,3 +373,86 @@ bool LedKeyScan_Test(void)
     }
 }
 #endif
+
+/********************* Timer2ÖÐ¶Ïº¯Êý************************/
+static unsigned char iSecCounter = 0;
+void timer2_int (void) interrupt TIMER2_VECTOR
+{
+    /* Check Keyboard Scan per 50ms */
+    iSecCounter++;
+
+    /* Update display content after buffer update */
+    if(FlashBitNo != 0) {
+        if(FlashBitNo & 0x001) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(0,lastDispBuf[0]);
+            else                     ledDisplayClose(0);
+        }
+        if(FlashBitNo & 0x002) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(1,lastDispBuf[1]);
+            else                     ledDisplayClose(1);
+        }
+        if(FlashBitNo & 0x004) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(2,lastDispBuf[2]);
+            else                     ledDisplayClose(2);
+        }
+        if(FlashBitNo & 0x008) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(3,lastDispBuf[3]);
+            else                     ledDisplayClose(3);
+        }
+        if(FlashBitNo & 0x010) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(4,lastDispBuf[4]);
+            else                     ledDisplayClose(4);
+        }
+        if(FlashBitNo & 0x020) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(5,lastDispBuf[5]);
+            else                     ledDisplayClose(5);
+        }
+        if(FlashBitNo & 0x040) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(6,lastDispBuf[6]);
+            else                     ledDisplayClose(6);
+        }
+        if(FlashBitNo & 0x080) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(7,lastDispBuf[7]);
+            else                     ledDisplayClose(7);
+        }
+        if(FlashBitNo & 0x100) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(8,lastDispBuf[8]);
+            else                     ledDisplayClose(8);
+        }
+        if(FlashBitNo & 0x200) {
+            if(iSecCounter % 2 == 0) ledDisplayCtrl(9,lastDispBuf[9]);
+            else                     ledDisplayClose(9);
+        }
+    }
+    if(isUpdateDisplayContentNow) {
+        updateDisplayContent();
+    }
+
+    /* Process Key Code */
+    getKeyCodeFromChipReg();
+    if(isMasterDevice()) {
+        if(KeyCode[0] == MSR_B1_K1S1_SYNC)   { KeyBitNo |= MSR_KEY_SYNC; }
+        if(KeyCode[0] == MSR_B1_K1S2_SET)    { KeyBitNo |= MSR_KEY_SET; }
+        if(KeyCode[0] == MSR_B1_K2S1_STOP)   { KeyBitNo |= MSR_KEY_STOP; }
+        if(KeyCode[0] == MSR_B1_K2S2_BOOT)   { KeyBitNo |= MSR_KEY_BOOT; }
+        
+        if(KeyCode[1] == MSR_B2_K1S3_UP)     { KeyBitNo |= MSR_KEY_UP; }
+        if(KeyCode[1] == MSR_B2_K1S4_DOWN)   { KeyBitNo |= MSR_KEY_DOWN; }
+        if(KeyCode[1] == MSR_B2_K2S3_PRE)    { KeyBitNo |= MSR_KEY_PRE; }
+        if(KeyCode[1] == MSR_B2_K2S4_UNLOAD) { KeyBitNo |= MSR_KEY_UNLOAD; }
+        
+        if(KeyCode[2] == MSR_B3_K1S5_PAUSE)  { KeyBitNo |= MSR_KEY_PAUSE; }
+        if(KeyCode[2] == MSR_B3_K1S6_CMUT)   { KeyBitNo |= MSR_KEY_CMUT; }
+    } else {
+        if(KeyCode[0] == SLV_B1_K1S1_RSET)   { KeyBitNo |= SLV_KEY_RSET; } //K1与KS1按键按下，数码管显示数字0~6
+        if(KeyCode[0] == SLV_B1_K1S2_SET)    { KeyBitNo |= SLV_KEY_SET; }
+        if(KeyCode[0] == SLV_B1_K2S1_POFF)   { KeyBitNo |= SLV_KEY_POFF; }
+    
+        if(KeyCode[1] == SLV_B2_K1S3_MUP)    { KeyBitNo |= SLV_KEY_MUP; } //K1与KS2按键按下，数码管显示关闭
+        if(KeyCode[1] == SLV_B2_K1S4_MDOWN)  { KeyBitNo |= SLV_KEY_MDOWN; }
+
+        if(KeyCode[2] == SLV_B3_K1S5_PAUSE)  { KeyBitNo |= SLV_KEY_PAUSE; } //K1与KS2按键按下，数码管显示关闭
+        if(KeyCode[2] == SLV_B3_K1S6_CMUT)   { KeyBitNo |= SLV_KEY_CMUT; }
+    };
+
+}
