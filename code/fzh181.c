@@ -376,10 +376,15 @@ bool LedKeyScan_Test(void)
 
 /********************* Timer2ÖÐ¶Ïº¯Êý************************/
 static unsigned char iSecCounter = 0;
-void timer2_int (void) interrupt TIMER2_VECTOR
+void timer1_int (void) interrupt TIMER1_VECTOR
 {
+    /* Check phase sequene lost */
+    checkPhaseSeqALost();
+    checkPhaseSeqBLost();
+    checkPhaseSeqCLost();
+
     /* Check Keyboard Scan per 50ms */
-    iSecCounter++;
+    if((iSecCounter++) % 50 != 0) return;
 
     /* Update display content after buffer update */
     if(FlashBitNo != 0) {
@@ -455,4 +460,5 @@ void timer2_int (void) interrupt TIMER2_VECTOR
         if(KeyCode[2] == SLV_B3_K1S6_CMUT)   { KeyBitNo |= SLV_KEY_CMUT; }
     };
 
+    return ;
 }

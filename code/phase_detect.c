@@ -18,7 +18,7 @@ static unsigned int phaseCLossCount = 0;
 
 static bool onlyOnce_ACPowerPhaseSequenceCheck = 1; // only exectue once
 
-static void checkPhaseSeqALost(void)
+void checkPhaseSeqALost(void)
 {
     if(phaseSeqALastFlag != PWR_PHASE_PIN_A) {
         phaseSeqALastFlag = PWR_PHASE_PIN_A;
@@ -32,7 +32,7 @@ static void checkPhaseSeqALost(void)
     }
 }
 
-static void checkPhaseSeqBLost(void)
+void checkPhaseSeqBLost(void)
 {
     if(phaseSeqBLastFlag != PWR_PHASE_PIN_B) {
         phaseSeqBLastFlag = PWR_PHASE_PIN_B;
@@ -46,7 +46,7 @@ static void checkPhaseSeqBLost(void)
     }
 }
 
-static void checkPhaseSeqCLost(void)
+void checkPhaseSeqCLost(void)
 {
     if(phaseSeqCLastFlag != PWR_PHASE_PIN_C) {
         phaseSeqCLastFlag = PWR_PHASE_PIN_C;
@@ -104,16 +104,6 @@ void acPowerPhaseSequenceCheck_Test(void)
     }
 }
 #endif
-
-/********************* Timer1中断函数************************/
-/* 用于做三相电相序检测 */
-void timer1_int (void) interrupt TIMER1_VECTOR
-{
-    /* Check phase sequene lost */
-    checkPhaseSeqALost();
-    checkPhaseSeqBLost();
-    checkPhaseSeqCLost();   
-}
 
 /********************* INT3中断函数 *************************/
 void Ext_INT3 (void) interrupt INT3_VECTOR

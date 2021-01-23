@@ -21,6 +21,11 @@
 #define HX710A1                    (1)
 #define HX710A2                    (2)
 
+#define STATUSMACHINE_BOOTINIT     (0)
+#define STATUSMACHINE_SYNCADDR     (1)
+#define STATUSMACHINE_CTRLMODE     (2)
+#define STATUSMACHINE_STOPMODE     (3)
+
 #define MSR_LED_INCLINE_INDICAT    (0)  //倾斜指示灯
 #define MSR_LED_OVER_LOADING       (1)  //超载
 #define MSR_LED_UNDER_LOADING      (2)  //欠载
@@ -159,6 +164,9 @@ void clrKeyStatus(unsigned short sKey);
 
 /* SD3178 */
 /* PHASE CHECK */
+void checkPhaseSeqALost(void);
+void checkPhaseSeqBLost(void);
+void checkPhaseSeqCLost(void);
 unsigned short checkACPowerPhaseSequence(void);
 
 /* Relay Ctrl */

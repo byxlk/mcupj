@@ -12,6 +12,7 @@
 /*************	本地常量声明	**************/
 
 /*************	本地变量声明	**************/
+static unsigned char sysStatuMachine = STATUSMACHINE_BOOTINIT;
 static unsigned short phaseSeq = 0x0;
 static unsigned int iSecondCounter = 0;
 static bool bMSR_PowerKeyLock = 1; /* if power key is lock,can't do power up */
@@ -41,7 +42,7 @@ static void UART_config(void)
     /* MAX485 Uart Config */
     COMx_InitStructure.UART_Mode      = UART_8bit_BRTx;		//模式,       UART_ShiftRight,UART_8bit_BRTx,UART_9bit,UART_9bit_BRTx
 	COMx_InitStructure.UART_BRT_Use   = BRT_Timer2;			//使用波特率,   BRT_Timer1, BRT_Timer2 (注意: 串口2固定使用BRT_Timer2)
-    COMx_InitStructure.UART_BaudRate  = 38400ul;			//波特率,     110 ~ 115200
+    COMx_InitStructure.UART_BaudRate  = 38400ul;	        //波特率,     110 ~ 115200
 	COMx_InitStructure.UART_RxEnable  = ENABLE;				//接收允许,   ENABLE或DISABLE
 	COMx_InitStructure.UART_Interrupt = ENABLE;				//中断允许,   ENABLE或DISABLE
 	COMx_InitStructure.UART_Polity    = PolityHigh;			//中断优先级, PolityLow,PolityHigh
@@ -178,14 +179,15 @@ static void Timer_Config(void)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
 	Timer_Inilize(Timer1,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
     
-    TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
-	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
-	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
-	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		    //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
-	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
-	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 20));	//初值, 节拍为20HZ(50ms)
-	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
-	Timer_Inilize(Timer2,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
+    /* Timer2 固定用于UART波特率发生器，请勿用作独立定时器 */
+    //TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
+	//TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
+	//TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
+	//TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		    //指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	//TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
+	//TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 20));	//初值, 节拍为20HZ(50ms)
+	//TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
+	//Timer_Inilize(Timer2,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
 }
 
 static void MSR_External_Interrupt_Config(void)
@@ -319,38 +321,49 @@ static void doRunning_MasterMain(void)
         phaseSeq = checkACPowerPhaseSequence();
         if(phaseSeq == 0xFABC) {
             MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
-            //bMSR_PowerKeyLock = 0;// unlock power key
-            if((getKeyCode() & MSR_LED_POWER_START) == 0) {
-                continue;
-            } else {
-                MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
-                MSR_relayCtrl_PWR(ON);
-                MSR_relayCtrl_WAR(OFF);
-            }
+            bMSR_PowerKeyLock = 0;// unlock power key
         } else { /* 反序 或者 缺相*/
             MSR_relayCtrl_PWR(OFF);
             MSR_relayCtrl_WAR(ON);
             MSR_LedFlashCtrl(MSR_LED_POWER_START);
             clrKeyStatus(MSR_KEY_BOOT);
             MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
-            //bMSR_PowerKeyLock = 1;
+            bMSR_PowerKeyLock = 1;
             continue;
         }
-        
-        /* Step2: Check Key scan process */
-        if((getKeyCode() & MSR_KEY_STOP) != 0){
-            MSR_relayCtrl_PWR(OFF);
-            MSR_relayCtrl_WAR(ON);
-            MSR_LedFlashCtrl(MSR_LED_POWER_START);
-            clrKeyStatus(MSR_KEY_BOOT);
+        switch(sysStatuMachine) {
+            case STATUSMACHINE_BOOTINIT:
+                /* Step2: Check Key scan process */
+                if(bMSR_PowerKeyLock == 0) {
+                    if((getKeyCode() & MSR_LED_POWER_START) != 0) {
+                        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
+                        MSR_relayCtrl_PWR(ON);
+                        MSR_relayCtrl_WAR(OFF);
+                        sysStatuMachine = STATUSMACHINE_SYNCADDR;
+                    }
+                }
+                break;
+            case STATUSMACHINE_SYNCADDR:
+                if((getKeyCode() & MSR_KEY_CMUT) != 0){
+                    if((getKeyCode() & MSR_KEY_SET) != 0) {
+                        /* Wait recive Slave device upload device No. and address  */
+                        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+                    }
+                }
+                break;
+            case STATUSMACHINE_CTRLMODE:
+                break;
+            case STATUSMACHINE_STOPMODE:
+                if((getKeyCode() & MSR_KEY_STOP) != 0){
+                    MSR_relayCtrl_PWR(OFF);
+                    MSR_relayCtrl_WAR(ON);
+                    MSR_LedFlashCtrl(MSR_LED_POWER_START);
+                    clrKeyStatus(MSR_KEY_BOOT);
+                }
+                break;
+            default:
+                break;
         }
-        if((getKeyCode() & MSR_KEY_CMUT) != 0){
-            if((getKeyCode() & MSR_KEY_SET) != 0) {
-                /* Wait recive Slave device upload device No. and address  */
-                MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
-            }
-        }
-        
         /* Step3: Update display content */
         
 	}	
@@ -381,9 +394,14 @@ static void doRunning_SlaveMain(void)
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
         if(phaseSeq == 0xFABC) {
-            //MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
+            SLV_LedStatusCtrl(SLV_LED_LOSS_PHASE, LED_OFF);
+            //bMSR_PowerKeyLock = 0;// unlock power key
         } else { /* 反序 或者 缺相*/
-            //MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
+            //MSR_relayCtrl_PWR(OFF);
+            //MSR_relayCtrl_WAR(ON);
+
+            //clrKeyStatus(MSR_KEY_BOOT);
+            SLV_LedFlashCtrl(SLV_LED_LOSS_PHASE);
             continue;
         }
 	}
