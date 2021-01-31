@@ -143,7 +143,7 @@ static void SLV_GPIO_Config(void)
 static void SLV_SPI_Config(void)
 {
 	SPI_InitTypeDef		SPI_InitStructure;
-	SPI_InitStructure.SPI_Module    = ENABLE;              //SPI启动    ENABLE, DISABLE
+	SPI_InitStructure.SPI_Module    = ENABLE;             //SPI启动    ENABLE, DISABLE
 	SPI_InitStructure.SPI_SSIG      = DISABLE;			  //片选位     ENABLE, DISABLE
 	SPI_InitStructure.SPI_FirstBit  = SPI_MSB;			  //移位方向   SPI_MSB, SPI_LSB
 	SPI_InitStructure.SPI_Mode      = SPI_Mode_Slave;	  //主从选择   SPI_Mode_Master, SPI_Mode_Slave
@@ -295,7 +295,9 @@ static void doRunning_HardwareTest(void)
 static void doRunning_MasterMain(void)
 {
     unsigned char i = 0;
-    unsigned short keyCode = 0x0;
+    //unsigned short keyCode = 0x0;
+    unsigned short curKeyBitCode = 0x0;
+    unsigned short lastKeyBitCode = 0x0;
 
     /* Step1: */
     EA = 0; // disbale all interrupt
@@ -305,7 +307,6 @@ static void doRunning_MasterMain(void)
     
     /* Debug Uart(P3.0/P3.1) and MAX485 Uart(P4.6/P4.7) init */
     UART_config();
-
 	Timer_Config();//Timer init
 
 	EA = 1; // enable all interrupt
@@ -317,56 +318,82 @@ static void doRunning_MasterMain(void)
     init_Watch_Dog();
     
 	while(1) {
+        /* Only for Debug */
+        curKeyBitCode = getKeyCode();
+        if(curKeyBitCode != lastKeyBitCode ) {
+            LOGD("KeyCode = 0x%04bx - 0x%04bx\n",lastKeyBitCode, curKeyBitCode);
+            lastKeyBitCode = curKeyBitCode ;
+        }
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
-        if(phaseSeq == 0xFABC) {
-            MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_OFF);
-            bMSR_PowerKeyLock = 0;// unlock power key
+        if(phaseSeq != 0xFABC) {
+            MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
+            if((curKeyBitCode & MSR_KEY_BOOT) && (bMSR_PowerKeyLock)) {
+                MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
+                MSR_relayCtrl_PWR(ON);
+                MSR_relayCtrl_WAR(OFF);
+                clrKeyStatus(MSR_KEY_BOOT);
+                bMSR_PowerKeyLock = 0;// unlock power key
+            } else {
+                if(bMSR_PowerKeyLock) {// unlock power key
+                    clrKeyStatus(MSR_KEY_ALL); 
+                    delay_ms(5);              
+                    continue;
+                }
+            }
         } else { /* 反序 或者 缺相*/
             MSR_relayCtrl_PWR(OFF);
             MSR_relayCtrl_WAR(ON);
-            MSR_LedFlashCtrl(MSR_LED_POWER_START);
-            clrKeyStatus(MSR_KEY_BOOT);
             MSR_LedFlashCtrl(MSR_LED_LOSS_PHASE);
             bMSR_PowerKeyLock = 1;
+            delay_ms(5);
             continue;
         }
-        switch(sysStatuMachine) {
-            case STATUSMACHINE_BOOTINIT:
-                /* Step2: Check Key scan process */
-                if(bMSR_PowerKeyLock == 0) {
-                    if((getKeyCode() & MSR_LED_POWER_START) != 0) {
-                        MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
-                        MSR_relayCtrl_PWR(ON);
-                        MSR_relayCtrl_WAR(OFF);
-                        sysStatuMachine = STATUSMACHINE_SYNCADDR;
-                    }
-                }
-                break;
-            case STATUSMACHINE_SYNCADDR:
-                if((getKeyCode() & MSR_KEY_CMUT) != 0){
-                    if((getKeyCode() & MSR_KEY_SET) != 0) {
-                        /* Wait recive Slave device upload device No. and address  */
-                        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
-                    }
-                }
-                break;
-            case STATUSMACHINE_CTRLMODE:
-                break;
-            case STATUSMACHINE_STOPMODE:
-                if((getKeyCode() & MSR_KEY_STOP) != 0){
-                    MSR_relayCtrl_PWR(OFF);
-                    MSR_relayCtrl_WAR(ON);
-                    MSR_LedFlashCtrl(MSR_LED_POWER_START);
-                    clrKeyStatus(MSR_KEY_BOOT);
-                }
-                break;
-            default:
-                break;
+
+        /* 检查是否按下了停止键 */
+        if((curKeyBitCode & MSR_KEY_STOP) && (!bMSR_PowerKeyLock)) {
+            MSR_relayCtrl_PWR(OFF);
+            MSR_relayCtrl_WAR(ON);
+            MSR_LedStatusCtrl(MSR_LED_ALL, LED_OFF);
+            clrKeyStatus(MSR_KEY_ALL);
+
+            for(i = 0; i < 10; i++) {
+                ledDisplayFlashEnable(i, FALSE);
+                ledDisplayClose(i); /* Close All display */
+            }
+
+            bMSR_PowerKeyLock = 1;
         }
+
+        /* 检查是否收到从机的异常信息 */
+        //if(slaveDeviceError) {
+        //}
+
+        /* 判断是否需要进行报号操作 */
+        /* 分机已经做过报号操作直接进入下一个状态机 */
+        //if(!checkAddrSyncStatus()) { /* 未进行报号操作或者需要重新报号 */
+        //    sysStatuMachine = STATUSMACHINE_CTRLMODE;
+        //}
+        //if((getKeyCode() & MSR_KEY_CMUT) != 0){
+        //    if((getKeyCode() & MSR_KEY_SET) != 0) {
+        //        /* Wait recive Slave device upload device No. and address  */
+        //        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+        //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
+        //    }
+        //}
+
+        /* 操作模式按键扫描检查 */
+        //if((getKeyCode() & MSR_KEY_CMUT) != 0){
+        //    if((getKeyCode() & MSR_KEY_SET) != 0) {
+        //        /* Wait recive Slave device upload device No. and address  */
+        //        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+        //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
+        //    }
+        //}
+
         /* Step3: Update display content */
-        
-	}	
+        delay_ms(5);
+    }
 }
 
 static void doRunning_SlaveMain(void)
@@ -404,6 +431,9 @@ static void doRunning_SlaveMain(void)
             SLV_LedFlashCtrl(SLV_LED_LOSS_PHASE);
             continue;
         }
+        
+        /* Read HX710 data every 500ms */
+        /* Key Scan and process */
 	}
 }
 #endif

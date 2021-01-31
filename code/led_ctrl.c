@@ -1,32 +1,31 @@
 #include "api_config.h"
 
-#define FLASH_TIME (10)  /* 10x10 ms µçÆ½·­×ª */
+#define FLASH_TIME (10)  /* 10x10 ms ï¿½ï¿½Æ½ï¿½ï¿½×ª */
 
-/* 00£º Ï¨Ãð  01/10 ÉÁË¸ 11£ºµãÁÁ */
+/* 00ï¿½ï¿½ Ï¨ï¿½ï¿½  01/10 ï¿½ï¿½Ë¸ 11ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ */
 struct ledStatsManage {
-    unsigned char msr_dy:2;//µçÔ´
-    unsigned char msr_lp:2; //È±Ïà
-    unsigned char msr_ss:2; //ÉÏÉý
-    unsigned char msr_cz:2; //³¬ÔØ
-    unsigned char msr_xj:2; //ÏÂ½µ
-    unsigned char msr_qz:2; //Ç·ÔØ
-    unsigned char msr_tb:2; //Í¬²½
-    unsigned char msr_qx:2; //ÇãÐ±
+    unsigned char msr_dy:2;//ï¿½ï¿½Ô´
+    unsigned char msr_lp:2; //È±ï¿½ï¿½
+    unsigned char msr_ss:2; //ï¿½ï¿½ï¿½ï¿½
+    unsigned char msr_cz:2; //ï¿½ï¿½ï¿½ï¿½
+    unsigned char msr_xj:2; //ï¿½Â½ï¿½
+    unsigned char msr_qz:2; //Ç·ï¿½ï¿½
+    unsigned char msr_tb:2; //Í¬ï¿½ï¿½
+    unsigned char msr_qx:2; //ï¿½ï¿½Ð±
     unsigned char msr_tx:2; //Í¨Ñ¶
 
-    unsigned char slv_zcg:2; //×ó³¬¸ß
-    unsigned char slv_lp:2; //È±Ïà
-    unsigned char slv_cz:2; //³¬ÔØ
-    unsigned char slv_ss:2; //ÉÏÉý
-    unsigned char slv_qz:2; //Ç·ÔØ
-    unsigned char slv_xj:2; //ÏÂ½µ
-    unsigned char slv_sk:2; //ÊÜ¿Ø
+    unsigned char slv_zcg:2; //ï¿½ó³¬¸ï¿½
+    unsigned char slv_lp:2; //È±ï¿½ï¿½
+    unsigned char slv_cz:2; //ï¿½ï¿½ï¿½ï¿½
+    unsigned char slv_ss:2; //ï¿½ï¿½ï¿½ï¿½
+    unsigned char slv_qz:2; //Ç·ï¿½ï¿½
+    unsigned char slv_xj:2; //ï¿½Â½ï¿½
+    unsigned char slv_sk:2; //ï¿½Ü¿ï¿½
     unsigned char slv_tx:2; //Í¨Ñ¶
-    unsigned char slv_ycg:2; //ÓÒ³¬¸ß
-    unsigned char slv_bj:2; //±¨¾¯
+    unsigned char slv_ycg:2; //ï¿½Ò³ï¿½ï¿½ï¿½
+    unsigned char slv_bj:2; //ï¿½ï¿½ï¿½ï¿½
 } ;
 static struct ledStatsManage ledCtrl = {0};
-
 
 void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
 {
@@ -142,35 +141,35 @@ void SLV_LedFlashCtrl(unsigned char LedNo)
 void ledStatusManageService(unsigned int iSec)
 {
     if( isMasterDevice()) {
-        //ÇãÐ±
+        //ï¿½ï¿½Ð±
         if(ledCtrl.msr_qx == 0x0)      MSR_LED_Incline_Indicat = 1;
         else if(ledCtrl.msr_qx == 0x3) MSR_LED_Incline_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Incline_Indicat = ~MSR_LED_Incline_Indicat; }
-        //µçÔ´
+        //ï¿½ï¿½Ô´
         if(ledCtrl.msr_dy == 0x0)      MSR_LED_Power_Start = 1;
         else if(ledCtrl.msr_dy == 0x3) MSR_LED_Power_Start = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Power_Start = ~MSR_LED_Power_Start; }
-        //È±Ïà
+        //È±ï¿½ï¿½
         if(ledCtrl.msr_lp == 0x0)      MSR_LED_Loss_Phase = 1;
         else if(ledCtrl.msr_lp == 0x3) MSR_LED_Loss_Phase = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Loss_Phase = ~MSR_LED_Loss_Phase; }
-        //ÉÏÉý
+        //ï¿½ï¿½ï¿½ï¿½
         if(ledCtrl.msr_ss == 0x0)      MSR_LED_Up_Indicat = 1;
         else if(ledCtrl.msr_ss == 0x3) MSR_LED_Up_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Up_Indicat = ~MSR_LED_Up_Indicat; }
-        //³¬ÔØ
+        //ï¿½ï¿½ï¿½ï¿½
         if(ledCtrl.msr_cz == 0x0)      MSR_LED_Over_Loading = 1;
         else if(ledCtrl.msr_cz == 0x3) MSR_LED_Over_Loading = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Over_Loading = ~MSR_LED_Over_Loading; }
-        //ÏÂ½µ
+        //ï¿½Â½ï¿½
         if(ledCtrl.msr_xj == 0x0)      MSR_LED_Down_Indicat = 1;
         else if(ledCtrl.msr_xj == 0x3) MSR_LED_Down_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Down_Indicat = ~MSR_LED_Down_Indicat; }
-        //Ç·ÔØ
+        //Ç·ï¿½ï¿½
         if(ledCtrl.msr_qz == 0x0)      MSR_LED_Under_Loading = 1;
         else if(ledCtrl.msr_qz == 0x3) MSR_LED_Under_Loading = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Under_Loading = ~MSR_LED_Under_Loading; }
-        //Í¬²½
+        //Í¬ï¿½ï¿½
         if(ledCtrl.msr_tb == 0x0)      MSR_LED_Synchro_Start = 1;
         else if(ledCtrl.msr_tb == 0x3) MSR_LED_Synchro_Start = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Synchro_Start = ~MSR_LED_Synchro_Start; }
@@ -179,27 +178,27 @@ void ledStatusManageService(unsigned int iSec)
         else if(ledCtrl.msr_tx == 0x3) MSR_LED_Communicat_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) MSR_LED_Communicat_Indicat = ~MSR_LED_Communicat_Indicat; }
     } else {
-        //È±Ïà
+        //È±ï¿½ï¿½
         if(ledCtrl.slv_lp == 0x0)      SLV_LED_Loss_Phase = 1;
         else if(ledCtrl.slv_lp == 0x3) SLV_LED_Loss_Phase = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Loss_Phase = ~SLV_LED_Loss_Phase; }
-        //³¬ÔØ
+        //ï¿½ï¿½ï¿½ï¿½
         if(ledCtrl.slv_cz == 0x0)      SLV_LED_Over_Loading = 1;
         else if(ledCtrl.slv_cz == 0x3) SLV_LED_Over_Loading = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Over_Loading = ~SLV_LED_Over_Loading; }
-        //ÉÏÉý
+        //ï¿½ï¿½ï¿½ï¿½
         if(ledCtrl.slv_ss == 0x0)      SLV_LED_Up_Indicat = 1;
         else if(ledCtrl.slv_ss == 0x3) SLV_LED_Up_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Up_Indicat = ~SLV_LED_Up_Indicat; }
-        //Ç·ÔØ
+        //Ç·ï¿½ï¿½
         if(ledCtrl.slv_qz == 0x0)      SLV_LED_Under_Loading = 1;
         else if(ledCtrl.slv_qz == 0x3) SLV_LED_Under_Loading = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Under_Loading = ~SLV_LED_Under_Loading; }
-        //ÏÂ½µ
+        //ï¿½Â½ï¿½
         if(ledCtrl.slv_xj == 0x0)      SLV_LED_Down_Indicat = 1;
         else if(ledCtrl.slv_xj == 0x3) SLV_LED_Down_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Down_Indicat = ~SLV_LED_Down_Indicat; }
-        //ÊÜ¿Ø
+        //ï¿½Ü¿ï¿½
         if(ledCtrl.slv_sk == 0x0)      SLV_LED_SK_Indicat = 1;
         else if(ledCtrl.slv_sk == 0x3) SLV_LED_SK_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_SK_Indicat = ~SLV_LED_SK_Indicat; }
@@ -207,146 +206,26 @@ void ledStatusManageService(unsigned int iSec)
         if(ledCtrl.slv_tx == 0x0)      SLV_LED_Communicat_Indicat = 1;
         else if(ledCtrl.slv_tx == 0x3) SLV_LED_Communicat_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Communicat_Indicat = ~SLV_LED_Communicat_Indicat; }
-        //ÓÒ³¬¸ß
+        //ï¿½Ò³ï¿½ï¿½ï¿½
         if(ledCtrl.slv_ycg == 0x0)      SLV_LED_YCG_Indicat = 1;
         else if(ledCtrl.slv_ycg == 0x3) SLV_LED_YCG_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_YCG_Indicat = ~SLV_LED_YCG_Indicat; }
-        //×ó³¬¸ß
+        //ï¿½ó³¬¸ï¿½
         if(ledCtrl.slv_zcg == 0x0)      SLV_LED_ZCG_Indicat = 1;
         else if(ledCtrl.slv_zcg == 0x3) SLV_LED_ZCG_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_ZCG_Indicat = ~SLV_LED_ZCG_Indicat; }
-        //±¨¾¯
+        //ï¿½ï¿½ï¿½ï¿½
         if(ledCtrl.slv_bj == 0x0)      SLV_LED_Warn_Indicat = 1;
         else if(ledCtrl.slv_bj == 0x3) SLV_LED_Warn_Indicat = 0;
         else { if((iSec % FLASH_TIME) == 0) SLV_LED_Warn_Indicat = ~SLV_LED_Warn_Indicat; }
     }
 }
 
-#if 0
-void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
-{
-    switch(LedNo) {
-        case MSR_LED_INCLINE_INDICAT:    MSR_LED_Incline_Indicat    = StatusFlag; break;
-        case MSR_LED_OVER_LOADING:       MSR_LED_Over_Loading       = StatusFlag; break;
-        case MSR_LED_UNDER_LOADING:      MSR_LED_Under_Loading      = StatusFlag; break;
-        case MSR_LED_LOSS_PHASE:         MSR_LED_Loss_Phase         = StatusFlag; break;
-        case MSR_LED_SYNCHRO_START:      MSR_LED_Synchro_Start      = StatusFlag; break;
-        case MSR_LED_UP_INDICAT:         MSR_LED_Up_Indicat         = StatusFlag; break;
-        case MSR_LED_DOWN_INDICAT:       MSR_LED_Down_Indicat       = StatusFlag; break;
-        case MSR_LED_COMMUNICAT_INDICAT: MSR_LED_Communicat_Indicat = StatusFlag; break;
-        case MSR_LED_POWER_START:        MSR_LED_Power_Start        = StatusFlag; break;
-        case MSR_LED_ALL:
-            MSR_LED_Incline_Indicat    = StatusFlag;
-            MSR_LED_Over_Loading       = StatusFlag;
-            MSR_LED_Under_Loading      = StatusFlag;
-            MSR_LED_Loss_Phase         = StatusFlag;
-            MSR_LED_Synchro_Start      = StatusFlag;
-            MSR_LED_Up_Indicat         = StatusFlag;
-            MSR_LED_Down_Indicat       = StatusFlag;
-            MSR_LED_Communicat_Indicat = StatusFlag;
-            MSR_LED_Power_Start        = StatusFlag;    
-            break;
-        default: break;
-    }
-}
-
-void MSR_LedFlashCtrl(unsigned char LedNo, unsigned int iFlash)
-{
-    if((iFlash % 25) == 0) {
-        switch(LedNo) {
-            case MSR_LED_INCLINE_INDICAT:    MSR_LED_Incline_Indicat    = ~MSR_LED_Incline_Indicat;      break;
-            case MSR_LED_OVER_LOADING:       MSR_LED_Over_Loading       = ~MSR_LED_Over_Loading;       break;
-            case MSR_LED_UNDER_LOADING:      MSR_LED_Under_Loading      = ~MSR_LED_Under_Loading;      break;
-            case MSR_LED_LOSS_PHASE:         MSR_LED_Loss_Phase         = ~MSR_LED_Loss_Phase;         break;
-            case MSR_LED_SYNCHRO_START:      MSR_LED_Synchro_Start      = ~MSR_LED_Synchro_Start;      break;
-            case MSR_LED_UP_INDICAT:         MSR_LED_Up_Indicat         = ~MSR_LED_Up_Indicat;         break;
-            case MSR_LED_DOWN_INDICAT:       MSR_LED_Down_Indicat       = ~MSR_LED_Down_Indicat;       break;
-            case MSR_LED_COMMUNICAT_INDICAT: MSR_LED_Communicat_Indicat = ~MSR_LED_Communicat_Indicat; break;
-            case MSR_LED_POWER_START:        MSR_LED_Power_Start        = ~MSR_LED_Power_Start;        break;
-            case MSR_LED_ALL:
-                MSR_LedStatusCtrl(MSR_LED_ALL, LED_OFF);
-                MSR_LED_Incline_Indicat    = ~MSR_LED_Incline_Indicat;
-                MSR_LED_Over_Loading       = ~MSR_LED_Over_Loading;
-                MSR_LED_Under_Loading      = ~MSR_LED_Under_Loading;
-                MSR_LED_Loss_Phase         = ~MSR_LED_Loss_Phase;
-                MSR_LED_Synchro_Start      = ~MSR_LED_Synchro_Start;
-                MSR_LED_Up_Indicat         = ~MSR_LED_Up_Indicat;
-                MSR_LED_Down_Indicat       = ~MSR_LED_Down_Indicat;
-                MSR_LED_Communicat_Indicat = ~MSR_LED_Communicat_Indicat;
-                MSR_LED_Power_Start        = ~MSR_LED_Power_Start;    
-                break;
-            default: break;
-        }
-    }
-}
-
-void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
-{
-    switch( LedNo ) {
-        case SLV_LED_ZCG_INDICAT:        SLV_LED_ZCG_Indicat        = StatusFlag; break;
-        case SLV_LED_OVER_LOADING:       SLV_LED_Over_Loading       = StatusFlag; break;
-        case SLV_LED_UNDER_LOADING:      SLV_LED_Under_Loading      = StatusFlag; break;
-        case SLV_LED_LOSS_PHASE:         SLV_LED_Loss_Phase         = StatusFlag; break;
-        case SLV_LED_SK_INDICAT:         SLV_LED_SK_Indicat         = StatusFlag; break;
-        case SLV_LED_UP_INDICAT:         SLV_LED_Up_Indicat         = StatusFlag; break;
-        case SLV_LED_DOWN_INDICAT:       SLV_LED_Down_Indicat       = StatusFlag; break;
-        case SLV_LED_COMMUNICAT_INDICAT: SLV_LED_Communicat_Indicat = StatusFlag; break;
-        case SLV_LED_YCG_INDICAT:        SLV_LED_YCG_Indicat        = StatusFlag; break;
-        case SLV_LED_WARN_INDICAT:       SLV_LED_Warn_Indicat       = StatusFlag; break;
-        case SLV_LED_ALL:
-            SLV_LED_ZCG_Indicat        = StatusFlag; 
-            SLV_LED_Over_Loading       = StatusFlag; 
-            SLV_LED_Under_Loading      = StatusFlag; 
-            SLV_LED_Loss_Phase         = StatusFlag; 
-            SLV_LED_SK_Indicat         = StatusFlag; 
-            SLV_LED_Up_Indicat         = StatusFlag; 
-            SLV_LED_Down_Indicat       = StatusFlag; 
-            SLV_LED_Communicat_Indicat = StatusFlag; 
-            SLV_LED_YCG_Indicat        = StatusFlag; 
-            SLV_LED_Warn_Indicat       = StatusFlag; 
-            break;
-        default: break;
-    }
-}
-
-void SLV_LedFlashCtrl(unsigned char LedNo, unsigned int iFlash)
-{
-    if((iFlash % 25) == 0) {
-        switch( LedNo ) {
-            case SLV_LED_ZCG_INDICAT:        SLV_LED_ZCG_Indicat        = ~SLV_LED_ZCG_Indicat; break;
-            case SLV_LED_OVER_LOADING:       SLV_LED_Over_Loading       = ~SLV_LED_Over_Loading; break;
-            case SLV_LED_UNDER_LOADING:      SLV_LED_Under_Loading      = ~SLV_LED_Under_Loading; break;
-            case SLV_LED_LOSS_PHASE:         SLV_LED_Loss_Phase         = ~SLV_LED_Loss_Phase; break;
-            case SLV_LED_SK_INDICAT:         SLV_LED_SK_Indicat         = ~SLV_LED_SK_Indicat; break;
-            case SLV_LED_UP_INDICAT:         SLV_LED_Up_Indicat         = ~SLV_LED_Up_Indicat; break;
-            case SLV_LED_DOWN_INDICAT:       SLV_LED_Down_Indicat       = ~SLV_LED_Down_Indicat; break;
-            case SLV_LED_COMMUNICAT_INDICAT: SLV_LED_Communicat_Indicat = ~SLV_LED_Communicat_Indicat; break;
-            case SLV_LED_YCG_INDICAT:        SLV_LED_YCG_Indicat        = ~SLV_LED_YCG_Indicat; break;
-            case SLV_LED_WARN_INDICAT:       SLV_LED_Warn_Indicat       = ~SLV_LED_Warn_Indicat; break;
-            case SLV_LED_ALL:
-                SLV_LedStatusCtrl(SLV_LED_ALL, LED_OFF);
-                SLV_LED_ZCG_Indicat        = ~SLV_LED_ZCG_Indicat; 
-                SLV_LED_Over_Loading       = ~SLV_LED_Over_Loading; 
-                SLV_LED_Under_Loading      = ~SLV_LED_Under_Loading; 
-                SLV_LED_Loss_Phase         = ~SLV_LED_Loss_Phase; 
-                SLV_LED_SK_Indicat         = ~SLV_LED_SK_Indicat; 
-                SLV_LED_Up_Indicat         = ~SLV_LED_Up_Indicat; 
-                SLV_LED_Down_Indicat       = ~SLV_LED_Down_Indicat; 
-                SLV_LED_Communicat_Indicat = ~SLV_LED_Communicat_Indicat; 
-                SLV_LED_YCG_Indicat        = ~SLV_LED_YCG_Indicat; 
-                SLV_LED_Warn_Indicat       = ~SLV_LED_Warn_Indicat; 
-                break;
-            default: break;
-        }
-    }
-}
-#endif
-
 #if TEST_MODE
 void ledLight_Test(bool StatusFlag)
 {
     if( isMasterDevice()) {
-        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_INCLINE_INDICAT,    StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_OVER_LOADING,       StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING,      StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE,         StatusFlag);
@@ -356,7 +235,7 @@ void ledLight_Test(bool StatusFlag)
         MSR_LedStatusCtrl(MSR_LED_COMMUNICAT_INDICAT, StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_POWER_START,        StatusFlag);
     } else {
-        MSR_LedStatusCtrl(MSR_LED_PHASE_INDICAT,      StatusFlag);
+        MSR_LedStatusCtrl(MSR_LED_INCLINE_INDICAT,    StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_OVER_LOADING,       StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_UNDER_LOADING,      StatusFlag);
         MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE,         StatusFlag);

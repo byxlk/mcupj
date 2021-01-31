@@ -59,6 +59,7 @@
 #define MSR_KEY_BOOT           (0x0080) /* 启动 */
 #define MSR_KEY_PRE            (0x0100) /* 预紧 */
 #define MSR_KEY_UNLOAD         (0x0200) /* 卸载 */
+#define MSR_KEY_ALL            (0x03FF) /* 所有 */
 
 #define SLV_KEY_RSET           (0x0001) /* 休眠 */
 #define SLV_KEY_SET            (0x0002) /* 设置 */
@@ -76,9 +77,9 @@ sbit MAX485_EN                  = P3^4;
 //sbit MAX485_TX1               = P4^7; //TXD2
 //sbit MAX485_RX1               = P4^6; //RXD2
 
-sbit PWR_PHASE_PIN_A                = P3^5; //
-sbit PWR_PHASE_PIN_B                = P3^6; //INT2
-sbit PWR_PHASE_PIN_C                = P3^7; //INT3
+sbit PWR_PHASE_PIN_A            = P3^5; //
+sbit PWR_PHASE_PIN_B            = P3^6; //INT2
+sbit PWR_PHASE_PIN_C            = P3^7; //INT3
 
 /*********************************************************/
 sbit MASTER_INDICATOR_FLAG      = P5^5; // 1: 主机   0：从机
@@ -130,10 +131,15 @@ sbit SLV_ADXL345_SDO            = P1^4;
 sbit SLV_ADXL345_CLK            = P1^5;
 
 /*********************************************************/
+//typedef struct {
+    
+
+//} SYS_CONFIG_S;
+/*********************************************************/
 /* Common */
 void delay_us(unsigned int t);
 void delay_ms(unsigned int t);
-void delay5us(void)	;
+void delay5us(void);
 void delay500ms();
 bool isMasterDevice(void);
 void init_Watch_Dog(void);
@@ -157,7 +163,7 @@ void SendDataFrame(unsigned char Length,unsigned char *str);
 /* FZH181 */
 void ledDisplayClose(unsigned char ledNo);
 void ledDisplayCtrl(unsigned char ledNo, char dispVal);
-void ledDisplayFlash(unsigned char ledNo);
+void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag);
 unsigned short getKeyCode(void);
 void clrKeyStatus(unsigned short sKey);
 
