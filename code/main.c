@@ -318,7 +318,7 @@ static void doRunning_MasterMain(void)
     init_Watch_Dog();
     
 	while(1) {
-        /* Only for Debug */
+        /* Step0：Only for Debug */
         curKeyBitCode = getKeyCode();
         if(curKeyBitCode != lastKeyBitCode ) {
             LOGD("KeyCode = 0x%04bx - 0x%04bx\n",lastKeyBitCode, curKeyBitCode);
@@ -350,7 +350,7 @@ static void doRunning_MasterMain(void)
             continue;
         }
 
-        /* 检查是否按下了停止键 */
+        /* Step2: 检查是否按下了停止键 */
         if((curKeyBitCode & MSR_KEY_STOP) && (!bMSR_PowerKeyLock)) {
             MSR_relayCtrl_PWR(OFF);
             MSR_relayCtrl_WAR(ON);
@@ -365,33 +365,44 @@ static void doRunning_MasterMain(void)
             bMSR_PowerKeyLock = 1;
         }
 
-        /* 检查是否收到从机的异常信息 */
-        //if(slaveDeviceError) {
-        //}
-
-        /* 判断是否需要进行报号操作 */
+        /* Step3: Check is need Read Device No 判断是否需要进行报号操作 */
         /* 分机已经做过报号操作直接进入下一个状态机 */
         //if(!checkAddrSyncStatus()) { /* 未进行报号操作或者需要重新报号 */
         //    sysStatuMachine = STATUSMACHINE_CTRLMODE;
-        //}
-        //if((getKeyCode() & MSR_KEY_CMUT) != 0){
-        //    if((getKeyCode() & MSR_KEY_SET) != 0) {
-        //        /* Wait recive Slave device upload device No. and address  */
-        //        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
-        //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
-        //    }
-        //}
-
-        /* 操作模式按键扫描检查 */
-        //if((getKeyCode() & MSR_KEY_CMUT) != 0){
-        //    if((getKeyCode() & MSR_KEY_SET) != 0) {
-        //        /* Wait recive Slave device upload device No. and address  */
-        //        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
-        //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
-        //    }
+            //if((getKeyCode() & MSR_KEY_CMUT) != 0){
+            //    if((getKeyCode() & MSR_KEY_SYNC) != 0) {
+            //        /* Wait recive Slave device upload device No. and address  */
+            //        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+            //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
+            //    }
+            //} else {
+            //    continue；
+            //}
         //}
 
-        /* Step3: Update display content */
+        /* Step4: 操作模式按键扫描检查 */
+        if((getKeyCode() & MSR_KEY_SET) != 0){
+            if((getKeyCode() & MSR_KEY_CMUT) != 0) {
+        //        /* Wait recive Slave device upload device No. and address  */
+                MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+        //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
+                clrKeyStatus(MSR_KEY_SET);
+                clrKeyStatus(MSR_KEY_CMUT);
+            }
+        }
+
+        /* Step5: 485通信接收数据解析处理 */
+
+            /* 检查是否收到从机的异常信息 */
+            /* 检测到分机上报的紧急停止的报警信号 */
+            //if(slaveDeviceError) {
+                /* P4.0输出高电位，电源继电器断开。*/
+                //MSR_relayCtrl_PWR(OFF);
+                /* P4.4输出低电位，报警继电器吸合发出告警信号 */
+                //MSR_relayCtrl_WAR(ON);
+            //}
+
+        /* Step6: delay 5ms for thread normal running */
         delay_ms(5);
     }
 }
