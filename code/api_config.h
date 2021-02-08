@@ -26,49 +26,6 @@
 #define STATUSMACHINE_CTRLMODE     (2)
 #define STATUSMACHINE_STOPMODE     (3)
 
-#define MSR_LED_INCLINE_INDICAT    (0)  //倾斜指示灯
-#define MSR_LED_OVER_LOADING       (1)  //超载
-#define MSR_LED_UNDER_LOADING      (2)  //欠载
-#define MSR_LED_LOSS_PHASE         (3)  //缺相
-#define MSR_LED_SYNCHRO_START      (4)  //同步启动
-#define MSR_LED_UP_INDICAT         (5)  //上升
-#define MSR_LED_DOWN_INDICAT       (6)  //下降
-#define MSR_LED_COMMUNICAT_INDICAT (7)  //通讯
-#define MSR_LED_POWER_START        (8)  //电源启动指示
-#define MSR_LED_ALL                (9)  /* Off All Led */
-
-#define SLV_LED_OVER_LOADING       (10) //超载
-#define SLV_LED_UNDER_LOADING      (11) //欠载
-#define SLV_LED_LOSS_PHASE         (12) //缺相
-#define SLV_LED_SK_INDICAT         (13) //受控指示
-#define SLV_LED_UP_INDICAT         (14) //上升
-#define SLV_LED_DOWN_INDICAT       (15) //下降
-#define SLV_LED_COMMUNICAT_INDICAT (16) //通讯
-#define SLV_LED_YCG_INDICAT        (17) //右超高
-#define SLV_LED_WARN_INDICAT       (18) //报警指示
-#define SLV_LED_ZCG_INDICAT        (19) //左超高
-#define SLV_LED_ALL                (20)  /* Off All Led */
-
-#define MSR_KEY_SYNC           (0x0001) /* 同步 */
-#define MSR_KEY_SET            (0x0002) /* 设置 */
-#define MSR_KEY_UP             (0x0004) /* 上升 */
-#define MSR_KEY_DOWN           (0x0008) /* 下降 */
-#define MSR_KEY_PAUSE          (0x0010) /* 暂停 */
-#define MSR_KEY_CMUT           (0x0020) /* 通讯 */
-#define MSR_KEY_STOP           (0x0040) /* 停止 */
-#define MSR_KEY_BOOT           (0x0080) /* 启动 */
-#define MSR_KEY_PRE            (0x0100) /* 预紧 */
-#define MSR_KEY_UNLOAD         (0x0200) /* 卸载 */
-#define MSR_KEY_ALL            (0x03FF) /* 所有 */
-
-#define SLV_KEY_RSET           (0x0001) /* 休眠 */
-#define SLV_KEY_SET            (0x0002) /* 设置 */
-#define SLV_KEY_MUP            (0x0004) /* 上升 */
-#define SLV_KEY_MDOWN          (0x0008) /* 下降 */
-#define SLV_KEY_PAUSE          (0x0010) /* 暂停 */
-#define SLV_KEY_CMUT           (0x0020) /* 通信 */
-#define SLV_KEY_POFF           (0x0040) /* 急停 */
-
 sbit FZH181_PIN_CLK             = P0^6;
 sbit FZH181_PIN_DIO             = P0^7;
 sbit FZH181_PIN_STB             = P0^5;
@@ -131,17 +88,59 @@ sbit SLV_ADXL345_SDO            = P1^4;
 sbit SLV_ADXL345_CLK            = P1^5;
 
 /*********************************************************/
-//typedef enum {
-//    MSR_KEY_SYNC = 0x0001,
-//}KEYCODE_DEF_E;
-//typedef struct {
-    
+typedef enum {
+    MSR_KEY_NONE   = 0x0000, /* 无键 */
+    MSR_KEY_SYNC   = 0x0001, /* 同步 */
+    MSR_KEY_SET    = 0x0002, /* 设置 */
+    MSR_KEY_UP     = 0x0004, /* 上升 */
+    MSR_KEY_DOWN   = 0x0008, /* 下降 */
+    MSR_KEY_PAUSE  = 0x0010, /* 暂停 */
+    MSR_KEY_CMUT   = 0x0020, /* 通讯 */
+    MSR_KEY_STOP   = 0x0040, /* 停止 */
+    MSR_KEY_BOOT   = 0x0080, /* 启动 */
+    MSR_KEY_PRE    = 0x0100, /* 预紧 */
+    MSR_KEY_UNLOAD = 0x0200, /* 卸载 */
+    MSR_KEY_ALL    = 0x03FF, /* 所有 */
 
-//} SYS_CONFIG_S;
+    SLV_KEY_NONE   = 0x0000, /* 无键 */
+    SLV_KEY_RSET   = 0x0001, /* 休眠 */
+    SLV_KEY_SET    = 0x0002, /* 设置 */
+    SLV_KEY_MUP    = 0x0004, /* 上升 */
+    SLV_KEY_MDOWN  = 0x0008, /* 下降 */
+    SLV_KEY_PAUSE  = 0x0010, /* 暂停 */
+    SLV_KEY_CMUT   = 0x0020, /* 通信 */
+    SLV_KEY_POFF   = 0x0040, /* 急停 */
+    SLV_KEY_ALL    = 0x007F /* 所有 */
+} KEYCODE_DEF_E;
+
+typedef enum {
+    MSR_LED_INCLINE_INDICAT    = 0,  //倾斜指示灯
+    MSR_LED_OVER_LOADING       = 1,  //超载
+    MSR_LED_UNDER_LOADING      = 2,  //欠载
+    MSR_LED_LOSS_PHASE         = 3,  //缺相
+    MSR_LED_SYNCHRO_START      = 4,  //同步启动
+    MSR_LED_UP_INDICAT         = 5,  //上升
+    MSR_LED_DOWN_INDICAT       = 6,  //下降
+    MSR_LED_COMMUNICAT_INDICAT = 7,  //通讯
+    MSR_LED_POWER_START        = 8,  //电源启动指示
+    MSR_LED_ALL                = 9,  /* Off All Led */
+
+    SLV_LED_OVER_LOADING       = 10, //超载
+    SLV_LED_UNDER_LOADING      = 11, //欠载
+    SLV_LED_LOSS_PHASE         = 12, //缺相
+    SLV_LED_SK_INDICAT         = 13, //受控指示
+    SLV_LED_UP_INDICAT         = 14, //上升
+    SLV_LED_DOWN_INDICAT       = 15, //下降
+    SLV_LED_COMMUNICAT_INDICAT = 16, //通讯
+    SLV_LED_YCG_INDICAT        = 17, //右超高
+    SLV_LED_WARN_INDICAT       = 18, //报警指示
+    SLV_LED_ZCG_INDICAT        = 19, //左超高
+    SLV_LED_ALL                = 20  /* Off All Led */
+} LEDCODE_DEF_E;
 
 typedef struct {
-    unsigned short secondKeyCode;
-    unsigned short firstKeyCode;
+    KEYCODE_DEF_E secondKeyCode;
+    KEYCODE_DEF_E firstKeyCode;
 } KEYCODE_REC_S;
 /*********************************************************/
 /* Common */
@@ -156,10 +155,10 @@ void PrintSystemInfoToSerial(bool msterFlag);
 
 /* Led Control */
 void ledStatusManageService(unsigned int iSec);
-void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
-void MSR_LedFlashCtrl(unsigned char LedNo);
-void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag);
-void SLV_LedFlashCtrl(unsigned char LedNo);
+void MSR_LedStatusCtrl(LEDCODE_DEF_E LedNo, bool StatusFlag);
+void MSR_LedFlashCtrl(LEDCODE_DEF_E LedNo);
+void SLV_LedStatusCtrl(LEDCODE_DEF_E LedNo, bool StatusFlag);
+void SLV_LedFlashCtrl(LEDCODE_DEF_E LedNo);
 
 /* HX710A */
 unsigned long getHX710Count(unsigned char iNo);
@@ -172,7 +171,7 @@ void SendDataFrame(unsigned char Length,unsigned char *str);
 void ledDisplayClose(unsigned char ledNo);
 void ledDisplayCtrl(unsigned char ledNo, char dispVal);
 void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag);
-void clrKeyStatus(unsigned short sKey);
+void clrKeyStatus(KEYCODE_DEF_E sKey);
 KEYCODE_REC_S* getKeyCode(void);
 
 

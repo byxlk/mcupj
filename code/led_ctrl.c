@@ -27,7 +27,7 @@ struct ledStatsManage {
 } ;
 static struct ledStatsManage ledCtrl = {0};
 
-void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
+void MSR_LedStatusCtrl(LEDCODE_DEF_E LedNo, bool StatusFlag)
 {
     switch(LedNo) {
         case MSR_LED_INCLINE_INDICAT:    ledCtrl.msr_qx  = StatusFlag? 0x0:0x3; break;
@@ -53,7 +53,7 @@ void MSR_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
         default: break;
     }
 }
-void MSR_LedFlashCtrl(unsigned char LedNo)
+void MSR_LedFlashCtrl(LEDCODE_DEF_E LedNo)
 {
         switch(LedNo) {
         case MSR_LED_INCLINE_INDICAT:    ledCtrl.msr_qx  = 0x1; break;
@@ -80,7 +80,7 @@ void MSR_LedFlashCtrl(unsigned char LedNo)
     }
 }
 
-void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
+void SLV_LedStatusCtrl(LEDCODE_DEF_E LedNo, bool StatusFlag)
 {
     switch( LedNo ) {
         case SLV_LED_ZCG_INDICAT:        ledCtrl.slv_zcg = (StatusFlag)? 0x0:0x3; break;
@@ -109,7 +109,7 @@ void SLV_LedStatusCtrl(unsigned char LedNo, bool StatusFlag)
     }
 }
 
-void SLV_LedFlashCtrl(unsigned char LedNo)
+void SLV_LedFlashCtrl(LEDCODE_DEF_E LedNo)
 {
     switch( LedNo ) {
         case SLV_LED_ZCG_INDICAT:        ledCtrl.slv_zcg = 0x1; break;

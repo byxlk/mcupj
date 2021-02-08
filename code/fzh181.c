@@ -169,7 +169,7 @@ void clrKeyStatus(unsigned short sKey)
 }
 #endif
 
-void clrKeyStatus(unsigned short sKey)
+void clrKeyStatus(KEYCODE_DEF_E sKey)
 {
     if(sKey == MSR_KEY_ALL) {
         KeyBitNo.firstKeyCode = 0x0;
@@ -183,7 +183,7 @@ void clrKeyStatus(unsigned short sKey)
         KeyBitNo.secondKeyCode = 0x0;
 }
 
-static void setKeyStatus(unsigned short sKey)
+static void setKeyStatus(KEYCODE_DEF_E sKey)
 {
     if((KeyBitNo.firstKeyCode == sKey) || (KeyBitNo.secondKeyCode == sKey)
         || ((KeyBitNo.firstKeyCode) && (KeyBitNo.secondKeyCode))) {
