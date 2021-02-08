@@ -296,8 +296,8 @@ static void doRunning_MasterMain(void)
 {
     unsigned char i = 0;
     //unsigned short keyCode = 0x0;
-    unsigned short curKeyBitCode = 0x0;
-    unsigned short lastKeyBitCode = 0x0;
+    KEYCODE_REC_S* curKeyBitCode = getKeyCode();
+    KEYCODE_REC_S lastKeyBitCode = {0x0, 0X0};
 
     /* Step1: */
     EA = 0; // disbale all interrupt
@@ -319,20 +319,19 @@ static void doRunning_MasterMain(void)
     
 	while(1) {
         /* Step0：Only for Debug */
-        curKeyBitCode = getKeyCode();
-        if(curKeyBitCode != lastKeyBitCode ) {
-            LOGD("KeyCode = 0x%04bx - 0x%04bx\n",lastKeyBitCode, curKeyBitCode);
-            lastKeyBitCode = curKeyBitCode ;
-        }
+        //if(curKeyBitCode != lastKeyBitCode ) {
+        //    LOGD("KeyCode = 0x%08bx - 0x%08bx\n",lastKeyBitCode, curKeyBitCode);
+        //    lastKeyBitCode = curKeyBitCode ;
+        //}
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
         if(phaseSeq != 0xFABC) {
             MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
-            if((curKeyBitCode & MSR_KEY_BOOT) && (bMSR_PowerKeyLock)) {
+            if((curKeyBitCode->firstKeyCode == MSR_KEY_BOOT) && (bMSR_PowerKeyLock)) {
+                clrKeyStatus(MSR_KEY_ALL);
                 MSR_LedStatusCtrl(MSR_LED_POWER_START, LED_ON);
                 MSR_relayCtrl_PWR(ON);
                 MSR_relayCtrl_WAR(OFF);
-                clrKeyStatus(MSR_KEY_BOOT);
                 bMSR_PowerKeyLock = 0;// unlock power key
             } else {
                 if(bMSR_PowerKeyLock) {// unlock power key
@@ -351,11 +350,11 @@ static void doRunning_MasterMain(void)
         }
 
         /* Step2: 检查是否按下了停止键 */
-        if((curKeyBitCode & MSR_KEY_STOP) && (!bMSR_PowerKeyLock)) {
+        if((curKeyBitCode->firstKeyCode == MSR_KEY_STOP) && (!bMSR_PowerKeyLock)) {
+            clrKeyStatus(MSR_KEY_ALL);
             MSR_relayCtrl_PWR(OFF);
             MSR_relayCtrl_WAR(ON);
             MSR_LedStatusCtrl(MSR_LED_ALL, LED_OFF);
-            clrKeyStatus(MSR_KEY_ALL);
 
             for(i = 0; i < 10; i++) {
                 ledDisplayFlashEnable(i, FALSE);
@@ -381,14 +380,13 @@ static void doRunning_MasterMain(void)
         //}
 
         /* Step4: 操作模式按键扫描检查 */
-        if((getKeyCode() & MSR_KEY_SET) != 0){
-            if((getKeyCode() & MSR_KEY_CMUT) != 0) {
+        if((curKeyBitCode->firstKeyCode == MSR_KEY_SET)
+            && (curKeyBitCode->secondKeyCode == MSR_KEY_CMUT)) {
         //        /* Wait recive Slave device upload device No. and address  */
                 MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
         //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
                 clrKeyStatus(MSR_KEY_SET);
                 clrKeyStatus(MSR_KEY_CMUT);
-            }
         }
 
         /* Step5: 485通信接收数据解析处理 */
@@ -403,6 +401,9 @@ static void doRunning_MasterMain(void)
             //}
 
         /* Step6: delay 5ms for thread normal running */
+        if((curKeyBitCode->firstKeyCode) && (curKeyBitCode->secondKeyCode)) {
+            clrKeyStatus(MSR_KEY_ALL);
+        }
         delay_ms(5);
     }
 }

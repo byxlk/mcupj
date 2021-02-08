@@ -131,10 +131,18 @@ sbit SLV_ADXL345_SDO            = P1^4;
 sbit SLV_ADXL345_CLK            = P1^5;
 
 /*********************************************************/
+//typedef enum {
+//    MSR_KEY_SYNC = 0x0001,
+//}KEYCODE_DEF_E;
 //typedef struct {
     
 
 //} SYS_CONFIG_S;
+
+typedef struct {
+    unsigned short secondKeyCode;
+    unsigned short firstKeyCode;
+} KEYCODE_REC_S;
 /*********************************************************/
 /* Common */
 void delay_us(unsigned int t);
@@ -164,8 +172,8 @@ void SendDataFrame(unsigned char Length,unsigned char *str);
 void ledDisplayClose(unsigned char ledNo);
 void ledDisplayCtrl(unsigned char ledNo, char dispVal);
 void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag);
-unsigned short getKeyCode(void);
 void clrKeyStatus(unsigned short sKey);
+KEYCODE_REC_S* getKeyCode(void);
 
 
 /* SD3178 */
