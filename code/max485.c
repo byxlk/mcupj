@@ -21,17 +21,29 @@ static void rs485_enable_recv(void)
     MAX485_EN = 0;
 }
 
+
 //发送一帧数据包
 //SendCmdDataTo485("AT+XXX");
-void SendCmdDataTo485(unsigned char *cmd)
+bool SendATCommand(u8 *cmd)
 {
-	//unsigned char i;
+	//u8 i;
+
+    if(cmd == NULL) return FALSE;
+
     rs485_enable_send();//485发送数据使能
+    delay_ms(2);
 
     for (; ((*cmd != 0) && (*cmd != '\0'));	cmd++) {
         TX2_write2buff(*cmd);
         //delay_ms(20);
     }
-    
+
+    delay_ms(2);
 	rs485_enable_recv();//数据发送完毕485等待接受数据
+
+    return TRUE;
 }
+
+
+
+

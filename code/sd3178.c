@@ -38,16 +38,16 @@
 #define		UserRam_30H		    (0x30)		//用户ram 30H地址
 
 //*********变量及IO口定义*********
-unsigned char		Sram[8];	//通用数据缓存器
+u8		Sram[8];	//通用数据缓存器
 typedef	struct
 {
-	unsigned char   second;
-	unsigned char	minute;
-	unsigned char	hour;
-	unsigned char	week;
-	unsigned char	day;
-	unsigned char	month;
-	unsigned char	year;
+	u8  second;
+	u8	minute;
+	u8	hour;
+	u8	week;
+	u8	day;
+	u8	month;
+	u8	year;
 }S_Time;	
 
 //初始化时间结构体变量（设置时间：2016年1月26日 14:59:55  星期二）
@@ -55,19 +55,19 @@ typedef	struct
 S_Time  RTC = {0x55,0x59,0x14,0x02,0x26,0x01,0x16};	
 
 /********函数声明********/
-//unsigned char I2CReadOneByte(unsigned char add);//读一字节
-//unsigned char I2CReadSerial(unsigned char Address, unsigned char length,unsigned char *ps);//连续读
-//unsigned char I2CWriteSerial(unsigned char Address, unsigned char length,unsigned char *ps);//连续写
+//u8 I2CReadOneByte(u8 add);//读一字节
+//u8 I2CReadSerial(u8 Address, u8 length,u8 *ps);//连续读
+//u8 I2CWriteSerial(u8 Address, u8 length,u8 *ps);//连续写
 //bool I2CWriteDate(S_Time	*SetRTC);//写时间	
 //bool I2CReadDate(S_Time	*psRTC);//读时间
 //bool WriteRTC_Enable(void);//写允许
 //bool WriteRTC_Disable(void);//写禁止
-//bool I2CWriteOneByte(unsigned char add, unsigned char date);//写一字节
+//bool I2CWriteOneByte(u8 add, u8 date);//写一字节
 
 /*********I2C延时4us***********/
 void I2CWait(void)//4us  @22.1184MHz
 {	
-	unsigned char i;
+	u8 i;
 
 	_nop_();
 	_nop_();
@@ -144,9 +144,9 @@ static bool I2CWaitAck(void) 	 //返回为:1=有ACK,0=无ACK
 }
 
 /************I2C发送8Bit*************/
-static void I2CSendByte(unsigned char demand) //数据从高位到低位//
+static void I2CSendByte(u8 demand) //数据从高位到低位//
 {
-	unsigned char i = 8;                                                    
+	u8 i = 8;                                                    
 	
 	while(i--)
 	{
@@ -162,10 +162,10 @@ static void I2CSendByte(unsigned char demand) //数据从高位到低位//
 }
 
 /*********I2C读入8Bit*********/
-static unsigned char I2CReceiveByte(void)      //数据从高位到低位//
+static u8 I2CReceiveByte(void)      //数据从高位到低位//
 {
-	unsigned char i = 8;
-	unsigned char ddata = 0;
+	u8 i = 8;
+	u8 ddata = 0;
 	MSR_SD3178_SDA = 1;			//设置SDA为输入（其它类型的单片机需要配置IO输入输出寄存器）
 	while(i--)
 	{
@@ -184,7 +184,7 @@ static unsigned char I2CReceiveByte(void)      //数据从高位到低位//
 }
 
 /******I2C写一个字节******/
-static bool I2CWriteOneByte(unsigned char add, unsigned char date)
+static bool I2CWriteOneByte(u8 add, u8 date)
 {		
 	if(!I2CStart())return FALSE;
 	I2CSendByte(RTC_Address);      
@@ -198,9 +198,9 @@ static bool I2CWriteOneByte(unsigned char add, unsigned char date)
 }
 
 /******I2C读一个字节程序******/
-static unsigned char I2CReadOneByte(unsigned char add)
+static u8 I2CReadOneByte(u8 add)
 {		
-	unsigned char dat;
+	u8 dat;
 	if(!I2CStart())return FALSE;
 	I2CSendByte(RTC_Address);      
 	if(!I2CWaitAck()){I2CStop(); return FALSE;}
@@ -331,9 +331,9 @@ void ClrINT(void)
 	WriteRTC_Disable();
 }
 /************RTC连续读多个字节************/
-unsigned char I2CReadSerial(unsigned char Address, unsigned char length,unsigned char *ps)
+u8 I2CReadSerial(u8 Address, u8 length,u8 *ps)
 {
-	unsigned char	i;
+	u8	i;
 	I2CStart();
 	I2CSendByte(RTC_Address);      
 	if(!I2CWaitAck()){I2CStop(); return FALSE;}
@@ -354,9 +354,9 @@ unsigned char I2CReadSerial(unsigned char Address, unsigned char length,unsigned
 }
 
 //******************RTC连续写多个字节******************|
-unsigned char RTCWriteSerial(unsigned char Address, unsigned char length,unsigned char *ps)
+u8 RTCWriteSerial(u8 Address, u8 length,u8 *ps)
 {
-	unsigned char	i;
+	u8	i;
 	WriteRTC_Enable();
 	
 	I2CStart();
@@ -378,8 +378,8 @@ unsigned char RTCWriteSerial(unsigned char Address, unsigned char length,unsigne
 //////*****主程序演示*****//////
 void rtcDisplay_Test(void)
 {
-	unsigned int		Bat;
-	unsigned char  	Batbit8, Batbit0_7;
+	u16		Bat;
+	u8  	Batbit8, Batbit0_7;
 	
 	I2CWriteDate(&RTC);	//设置时间演示，16年1月26日......
 //	WriteALARM();    	//设置报警中断时间演示

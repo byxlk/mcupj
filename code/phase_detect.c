@@ -1,8 +1,8 @@
 #include "api_config.h"
 
-/* F:ÕýÐò  0£º·´Ðò ABC£º¶ÔÓ¦µÄP3.5 P3.6 P3.7 */
+/* F:ï¿½ï¿½ï¿½ï¿½  0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ABCï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½P3.5 P3.6 P3.7 */
 static bool phaseSeqIsRight = 0;
-static unsigned char phaseSeqCheckCount = 0;
+static u8 phaseSeqCheckCount = 0;
 
 static bool phaseALossFlag = 1;
 static bool phaseBLossFlag = 1;
@@ -12,9 +12,9 @@ static bool phaseSeqALastFlag = 1;
 static bool phaseSeqBLastFlag = 1;
 static bool phaseSeqCLastFlag = 1;
 
-static unsigned int phaseALossCount = 0;
-static unsigned int phaseBLossCount = 0;
-static unsigned int phaseCLossCount = 0;
+static u32 phaseALossCount = 0;
+static u32 phaseBLossCount = 0;
+static u32 phaseCLossCount = 0;
 
 static bool onlyOnce_ACPowerPhaseSequenceCheck = 1; // only exectue once
 
@@ -25,7 +25,7 @@ void checkPhaseSeqALost(void)
         phaseALossCount = 0;
         phaseALossFlag = 0;
     } else {
-        // ³¬¹ý100ms µçÆ½Ã»ÓÐ±ä»¯ÈÏÎªphase¶ªÊ§
+        // ï¿½ï¿½ï¿½ï¿½100ms ï¿½ï¿½Æ½Ã»ï¿½Ð±ä»¯ï¿½ï¿½Îªphaseï¿½ï¿½Ê§
         if((phaseALossCount++) > 100) {
             phaseALossFlag = 1;
         }
@@ -39,7 +39,7 @@ void checkPhaseSeqBLost(void)
         phaseBLossCount = 0;
         phaseBLossFlag = 0;
     } else {
-        // ³¬¹ý100ms µçÆ½Ã»ÓÐ±ä»¯ÈÏÎªphase¶ªÊ§
+        // ï¿½ï¿½ï¿½ï¿½100ms ï¿½ï¿½Æ½Ã»ï¿½Ð±ä»¯ï¿½ï¿½Îªphaseï¿½ï¿½Ê§
         if((phaseBLossCount++) > 100) {
             phaseBLossFlag = 1;
         }
@@ -53,17 +53,17 @@ void checkPhaseSeqCLost(void)
         phaseCLossCount = 0;
         phaseCLossFlag = 0;
     } else {
-        // ³¬¹ý100ms µçÆ½Ã»ÓÐ±ä»¯ÈÏÎªphase¶ªÊ§
+        // ï¿½ï¿½ï¿½ï¿½100ms ï¿½ï¿½Æ½Ã»ï¿½Ð±ä»¯ï¿½ï¿½Îªphaseï¿½ï¿½Ê§
         if((phaseCLossCount++) > 100) {
             phaseCLossFlag = 1;
         }
     }
 }
 
-unsigned short checkACPowerPhaseSequence(void)
+u16 checkACPowerPhaseSequence(void)
 {
-    /* F:ÕýÐò  0£º·´Ðò ABC£º¶ÔÓ¦µÄP3.5 P3.6 P3.7 */
-    unsigned short phaseSeq = 0xFABC;//0x0ACB
+    /* F:ï¿½ï¿½ï¿½ï¿½  0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ABCï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½P3.5 P3.6 P3.7 */
+    u16 phaseSeq = 0xFABC;//0x0ACB
 
     if(phaseALossFlag) phaseSeq &=  0x00FF;
     else { phaseSeq &=  0x00FF; phaseSeq |=  0x0AFF;}
@@ -86,7 +86,7 @@ unsigned short checkACPowerPhaseSequence(void)
 #if TEST_MODE
 void acPowerPhaseSequenceCheck_Test(void)
 {
-    unsigned short phaseSeq = checkACPowerPhaseSequence();
+    u16 phaseSeq = checkACPowerPhaseSequence();
     if((phaseSeq & 0xF000) == 0) {/* ?? */
         LOGD("Phase Sequence is right\n");
     } else {
@@ -105,7 +105,7 @@ void acPowerPhaseSequenceCheck_Test(void)
 }
 #endif
 
-/********************* INT3ÖÐ¶Ïº¯Êý *************************/
+/********************* INT3ï¿½Ð¶Ïºï¿½ï¿½ï¿½ *************************/
 void Ext_INT3 (void) interrupt INT3_VECTOR
 {
     /* Check phase sequene err */

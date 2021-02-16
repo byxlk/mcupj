@@ -1,29 +1,29 @@
 #include "api_config.h"
 
-#define FLASH_TIME (10)  /* 10x10 ms ��ƽ��ת */
+#define FLASH_TIME (100)  /* 10x10 ms ��ƽ��ת */
 
 /* 00�� Ϩ��  01/10 ��˸ 11������ */
 struct ledStatsManage {
-    unsigned char msr_dy:2;//��Դ
-    unsigned char msr_lp:2; //ȱ��
-    unsigned char msr_ss:2; //����
-    unsigned char msr_cz:2; //����
-    unsigned char msr_xj:2; //�½�
-    unsigned char msr_qz:2; //Ƿ��
-    unsigned char msr_tb:2; //ͬ��
-    unsigned char msr_qx:2; //��б
-    unsigned char msr_tx:2; //ͨѶ
+    u8 msr_dy:2;//��Դ
+    u8 msr_lp:2; //ȱ��
+    u8 msr_ss:2; //����
+    u8 msr_cz:2; //����
+    u8 msr_xj:2; //�½�
+    u8 msr_qz:2; //Ƿ��
+    u8 msr_tb:2; //ͬ��
+    u8 msr_qx:2; //��б
+    u8 msr_tx:2; //ͨѶ
 
-    unsigned char slv_zcg:2; //�󳬸�
-    unsigned char slv_lp:2; //ȱ��
-    unsigned char slv_cz:2; //����
-    unsigned char slv_ss:2; //����
-    unsigned char slv_qz:2; //Ƿ��
-    unsigned char slv_xj:2; //�½�
-    unsigned char slv_sk:2; //�ܿ�
-    unsigned char slv_tx:2; //ͨѶ
-    unsigned char slv_ycg:2; //�ҳ���
-    unsigned char slv_bj:2; //����
+    u8 slv_zcg:2; //�󳬸�
+    u8 slv_lp:2; //ȱ��
+    u8 slv_cz:2; //����
+    u8 slv_ss:2; //����
+    u8 slv_qz:2; //Ƿ��
+    u8 slv_xj:2; //�½�
+    u8 slv_sk:2; //�ܿ�
+    u8 slv_tx:2; //ͨѶ
+    u8 slv_ycg:2; //�ҳ���
+    u8 slv_bj:2; //����
 } ;
 static struct ledStatsManage ledCtrl = {0};
 
@@ -138,7 +138,7 @@ void SLV_LedFlashCtrl(LEDCODE_DEF_E LedNo)
     }
 }
 
-void ledStatusManageService(unsigned int iSec)
+void ledStatusManageService(u32 iSec)
 {
     if( isMasterDevice()) {
         //��б

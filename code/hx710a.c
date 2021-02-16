@@ -1,21 +1,37 @@
 #include "api_config.h"
 
-unsigned long getHX710Count(unsigned char iNo)
+#define TIMEROUT_VAL  (300)
+
+u32 getHX710Count(u8 iNo)
 {
-    unsigned long iCount = 0;
-    unsigned char i;
+    u32 iCount = 0;
+    u8 i = 0;
+    u8 iCounter = 0;
     
     if((iNo != HX710A1) && (iNo != HX710A2))
        return iCount;
 
-    if(iNo == HX710A1) SLV_HE710A1_SDA = 1;
-    else SLV_HE710A2_SDA = 1;
+    if(iNo == HX710A1) SLV_HX710A1_SDA = 1;
+    else SLV_HX710A2_SDA = 1;
     
     if(iNo == HX710A1) SLV_HX710A1_SCK = 0;
     else SLV_HX710A2_SCK = 0;
-    
-    if(iNo == HX710A1) while(SLV_HE710A1_SDA);
-    else while(SLV_HE710A2_SDA);
+
+    if(iNo == HX710A1) {
+        while(SLV_HX710A1_SDA) {
+            delay_ms(1);
+            if((iCounter++) > TIMEROUT_VAL) {
+                break;
+            }
+        }
+    } else {
+        while(SLV_HX710A2_SDA) {
+            delay_ms(1);
+            if((iCounter++) > TIMEROUT_VAL) {
+                break;
+            }
+        }
+    };
     
     for( i = 0; i < 24; i++) {
         if(iNo == HX710A1) SLV_HX710A1_SCK = 1;
@@ -26,8 +42,8 @@ unsigned long getHX710Count(unsigned char iNo)
         if(iNo == HX710A1) SLV_HX710A1_SCK = 0;
         else SLV_HX710A2_SCK = 0;
         
-        if(iNo == HX710A1) {if(SLV_HE710A1_SDA) iCount++;}
-        else {if(SLV_HE710A2_SDA) iCount++;}
+        if(iNo == HX710A1) {if(SLV_HX710A1_SDA) iCount++;}
+        else {if(SLV_HX710A2_SDA) iCount++;}
     }
 
     if(iNo == HX710A1) SLV_HX710A1_SCK = 1;

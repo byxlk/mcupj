@@ -3,12 +3,12 @@
 
 #define		IDATA_ID_START_ADDR	0xf1		//??idata?ID??????
 #define		CODE_ID_START_ADDR	(8192-7)	//??code ?ID??????
-unsigned char	idata ID_idata[7];	//idata ??ID?
-unsigned char	idata ID_code[7];	//code  ??ID?
+u8	idata ID_idata[7];	//idata ??ID?
+u8	idata ID_code[7];	//code  ??ID?
 
 static void Delay_1us(void)		//@22.1184MHz
 {
-	unsigned char i;
+	u8 i;
 
 	i = 3;
 	while (--i);
@@ -16,7 +16,7 @@ static void Delay_1us(void)		//@22.1184MHz
 
 static void Delay_1ms(void)		//@22.1184MHz
 {
-	unsigned char i, j;
+	u8 i, j;
 
 	_nop_();
 	_nop_();
@@ -28,19 +28,19 @@ static void Delay_1ms(void)		//@22.1184MHz
 	} while (--i);
 }
 
-void delay_us(unsigned int t)
+void delay_us(u32 t)
 {
     while(t--) Delay_1us();
 }
 
-void delay_ms(unsigned int t)
+void delay_ms(u32 t)
 {
     while(t--) Delay_1ms();
 }
 
 void delay5us(void)		//@22.1184MHz
 {
-	unsigned char i;
+	u8 i;
 
 	_nop_();
 	i = 25;
@@ -49,7 +49,7 @@ void delay5us(void)		//@22.1184MHz
 
 void delay10us(void)		//@22.1184MHz
 {
-	unsigned char i;
+	u8 i;
 
 	_nop_();
 	_nop_();
@@ -58,9 +58,9 @@ void delay10us(void)		//@22.1184MHz
 	while (--i);
 }
 
-void delay500ms()		//@22.1184MHz
+void delay500ms(void)		//@22.1184MHz
 {
-	unsigned char i, j, k;
+	u8 i, j, k;
 
 	_nop_();
 	_nop_();
@@ -78,9 +78,9 @@ void delay500ms()		//@22.1184MHz
 
 void readCpuId()
 {
-	unsigned char	idata *ip;
-	unsigned char	code  *cp;
-	unsigned char	i;
+	u8	idata *ip;
+	u8	code  *cp;
+	u8	i;
 	
 	for(i=0, ip=IDATA_ID_START_ADDR; ip<(IDATA_ID_START_ADDR+7); ip++)	ID_idata[i++] = *ip;
 	for(i=0, cp=CODE_ID_START_ADDR;  cp<(CODE_ID_START_ADDR+7);  cp++)	ID_code[i++]  = *cp;
@@ -137,10 +137,10 @@ bit POF_Boot_Delay(void)
 }
 
 
-static void PrintSameString(unsigned char *puts, unsigned char nSize)
+static void PrintSameString(u8 *puts, u8 nSize)
 {
 #if DEBUG
-	unsigned char i = 0;
+	u8 i = 0;
 	if(nSize > 0)
 	{ 
 		for(i = 0; i < nSize; i++) 
@@ -169,3 +169,4 @@ void PrintSystemInfoToSerial(bool msterFlag)
     PrintSameString("*", 62);
 #endif
 }
+

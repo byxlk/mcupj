@@ -12,9 +12,9 @@
 /*************	本地常量声明	**************/
 
 /*************	本地变量声明	**************/
-static unsigned char sysStatuMachine = STATUSMACHINE_BOOTINIT;
-static unsigned short phaseSeq = 0x0;
-static unsigned int iSecondCounter = 0;
+static u8 sysStatuMachine = STATUSMACHINE_BOOTINIT;
+static u16 phaseSeq = 0x0;
+static u32 iSecondCounter = 0;
 static bool bMSR_PowerKeyLock = 1; /* if power key is lock,can't do power up */
 
 
@@ -164,9 +164,9 @@ static void Timer_Config(void)
 	TIM_InitStructure.TIM_Mode      = TIM_16BitAutoReload;	//指定工作模式,   TIM_16BitAutoReload,TIM_16Bit,TIM_8BitAutoReload,TIM_16BitAutoReloadNoMask
 	TIM_InitStructure.TIM_Polity    = PolityHigh;			//指定中断优先级, PolityHigh,PolityLow
 	TIM_InitStructure.TIM_Interrupt = ENABLE;				//中断是否允许,   ENABLE或DISABLE
-	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_12T;		//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
+	TIM_InitStructure.TIM_ClkSource = TIM_CLOCK_1T;		//指定时钟源,     TIM_CLOCK_1T,TIM_CLOCK_12T,TIM_CLOCK_Ext
 	TIM_InitStructure.TIM_ClkOut    = DISABLE;				//是否输出高速脉冲, ENABLE或DISABLE
-	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (12 * 100));	//初值, 节拍为100HZ(10ms)
+	TIM_InitStructure.TIM_Value     = 65536 - (MAIN_Fosc / (1 * 1000));	//初值, 节拍为100HZ(10ms)
 	TIM_InitStructure.TIM_Run       = ENABLE;				//是否初始化后启动定时器, ENABLE或DISABLE
 	Timer_Inilize(Timer0,&TIM_InitStructure);				//初始化Timer0	  Timer0,Timer1,Timer2
     
@@ -227,10 +227,15 @@ static void SLV_External_Interrupt_Config(void)
 	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
+u32 getSysTick(void)
+{
+    return iSecondCounter;
+}
+
 #if TEST_MODE
 static void doRunning_HardwareTest(void)
 {
-    unsigned char i = 0;
+    u8 i = 0;
 
     /* Step1: */
     EA = 0; // disbale all interrupt
@@ -294,8 +299,8 @@ static void doRunning_HardwareTest(void)
 
 static void doRunning_MasterMain(void)
 {
-    unsigned char i = 0;
-    //unsigned short keyCode = 0x0;
+    u8 i = 0;
+    //u16 keyCode = 0x0;
     KEYCODE_REC_S* curKeyBitCode = getKeyCode();
     KEYCODE_REC_S lastKeyBitCode = {0x0, 0X0};
 
@@ -325,7 +330,8 @@ static void doRunning_MasterMain(void)
         //}
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
-        if(phaseSeq != 0xFABC) {
+
+        if(phaseSeq == 0xFABC) {
             MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
             if((curKeyBitCode->firstKeyCode == MSR_KEY_BOOT) && (bMSR_PowerKeyLock)) {
                 clrKeyStatus(MSR_KEY_ALL);
@@ -410,7 +416,7 @@ static void doRunning_MasterMain(void)
 
 static void doRunning_SlaveMain(void)
 {
-    unsigned char i = 0;
+    u8 i = 0;
     EA = 0; // disbale all interrupt
 
     SLV_GPIO_Config();//GPIO init
@@ -471,7 +477,7 @@ void main(void)
 
 /********************* Timer0中断函数************************/
 #define TIMER_VALUE (65536 - (MAIN_Fosc / (12 * 50)))
-void timer0_int (void) interrupt TIMER0_VECTOR //10ms @22.1184MHz
+void timer0_int (void) interrupt TIMER0_VECTOR //1ms @22.1184MHz
 {
 	// process watch dog signal
 	WDT_CONTR &= 0x7F;

@@ -73,9 +73,9 @@ sbit SLV_LED_YCG_Indicat        = P2^7; //右超高
 sbit SLV_LED_Warn_Indicat       = P4^4; //报警指示
 
 sbit SLV_HX710A1_SCK            = P0^1;
-sbit SLV_HE710A1_SDA            = P0^0;
+sbit SLV_HX710A1_SDA            = P0^0;
 sbit SLV_HX710A2_SCK            = P0^3;
-sbit SLV_HE710A2_SDA            = P0^2;
+sbit SLV_HX710A2_SDA            = P0^2;
 
 sbit SLV_RELAY_CTRL1_XJ         = P4^1;
 sbit SLV_RELAY_CTRL1_SS         = P4^0;
@@ -144,33 +144,33 @@ typedef struct {
 } KEYCODE_REC_S;
 /*********************************************************/
 /* Common */
-void delay_us(unsigned int t);
-void delay_ms(unsigned int t);
+void delay_us(u32 t);
+void delay_ms(u32 t);
 void delay5us(void);
 void delay500ms();
+u32 getSysTick(void);
 bool isMasterDevice(void);
 void init_Watch_Dog(void);
 void Reboot_System(void);
 void PrintSystemInfoToSerial(bool msterFlag);
 
 /* Led Control */
-void ledStatusManageService(unsigned int iSec);
+void ledStatusManageService(u32 iSec);
 void MSR_LedStatusCtrl(LEDCODE_DEF_E LedNo, bool StatusFlag);
 void MSR_LedFlashCtrl(LEDCODE_DEF_E LedNo);
 void SLV_LedStatusCtrl(LEDCODE_DEF_E LedNo, bool StatusFlag);
 void SLV_LedFlashCtrl(LEDCODE_DEF_E LedNo);
 
 /* HX710A */
-unsigned long getHX710Count(unsigned char iNo);
+u32 getHX710Count(u8 iNo);
 
 /*max485*/
-void SendByteData(unsigned char dat);
-void SendDataFrame(unsigned char Length,unsigned char *str);
+bool SendATCommand(u8 *cmd);
 
 /* FZH181 */
-void ledDisplayClose(unsigned char ledNo);
-void ledDisplayCtrl(unsigned char ledNo, char dispVal);
-void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag);
+void ledDisplayClose(u8 ledNo);
+void ledDisplayCtrl(u8 ledNo, i8 dispVal);
+void ledDisplayFlashEnable(u8 ledNo, bool bFlag);
 void clrKeyStatus(KEYCODE_DEF_E sKey);
 KEYCODE_REC_S* getKeyCode(void);
 
@@ -180,7 +180,7 @@ KEYCODE_REC_S* getKeyCode(void);
 void checkPhaseSeqALost(void);
 void checkPhaseSeqBLost(void);
 void checkPhaseSeqCLost(void);
-unsigned short checkACPowerPhaseSequence(void);
+u16 checkACPowerPhaseSequence(void);
 
 /* Relay Ctrl */
 void relayCtrl_XJ1(bool flag);
@@ -196,7 +196,7 @@ void MSR_relayCtrl_WAR(bool flag);
 #if TEST_MODE
 void acPowerPhaseSequenceCheck_Test(void);
 void ledLight_Test(bool StatusFlag);
-void LedDisplay_Test(char Val);
+void LedDisplay_Test(i8 Val);
 bool LedKeyScan_Test(void);
 void rtcDisplay_Test(void);
 void hx710_Test(void);

@@ -5,6 +5,6 @@
 #include	"config.h"
 
 void	TxSend(u8 dat);
-void 	PrintString(unsigned char code *puts);
+void 	PrintString(u8 code *puts);
 
 #endif

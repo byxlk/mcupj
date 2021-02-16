@@ -23,19 +23,19 @@
 #define SLV_B1_K2S1_POFF           (0x02) /* 急停 */
 
 static bool isUpdateDisplayContentNow = 0;
-static unsigned char dispBuf[14] = {0x0};
-static unsigned char lastDispBuf[10] = {0x0};
-static unsigned char comDispBuf[10] = {0x0};
-static unsigned char KeyCode[5] = {0x0};	 //为存储按键值定义的数组
+static u8 dispBuf[14] = {0x0};
+static u8 lastDispBuf[10] = {0x0};
+static u8 comDispBuf[10] = {0x0};
+static u8 KeyCode[5] = {0x0};	 //为存储按键值定义的数组
 
 /* 高位：记录第二次按下的按键 低位：记录第一次按下的按键 */
 static KEYCODE_REC_S KeyBitNo = {0x0, 0x0};
-static unsigned short FlashBitNo = 0x0;
+static u16 FlashBitNo = 0x0;
 
 /***************发送8bit数据，从低位开始**************/
-static void send_8bit( unsigned char dat )	 //发送8位数据,从低位开始
+static void send_8bit( u8 dat )	 //发送8位数据,从低位开始
 {
-    unsigned char i;
+    u8 i;
 
     for(i = 0; i < 8; i++)
     {
@@ -58,7 +58,7 @@ static void send_8bit( unsigned char dat )	 //发送8位数据,从低位开始
 }
 
 /******************发送控制命令***********************/
-static void send_command(unsigned char com)  //发送命令字节
+static void send_command(u8 com)  //发送命令字节
 {
     FZH181_PIN_STB = 1;				  //STB置高
 
@@ -74,8 +74,8 @@ static void send_command(unsigned char com)  //发送命令字节
 /****************读取按键值并存储*******************/
 static void getKeyCodeFromChipReg(void)			  //读取5字节按键值并存入数组KEY[],从低字节、低位开始
 {
-    unsigned char i;
-    unsigned char j;
+    u8 i;
+    u8 j;
     
     //KeyCode[0] = KeyCode[1] = KeyCode[2] = 0;
     //KeyCode[3] = KeyCode[4] = 0;
@@ -115,7 +115,7 @@ static void getKeyCodeFromChipReg(void)			  //读取5字节按键值并存入数
 /************显示函数，数码管1~7位显示0~6************/
 static void updateDisplayContent(void)   //显示函数，1~10位数码管显示0~9
 {
-    unsigned char i;
+    u8 i;
 
     send_command(0x03);     //设置显示模式，7位10段模式
     send_command(0x40);	    //设置数据命令，采用地址自动加1模式
@@ -139,7 +139,7 @@ KEYCODE_REC_S* getKeyCode(void)
 }
 
 #if 0
-void clrKeyStatus(unsigned short sKey)
+void clrKeyStatus(u16 sKey)
 {
     if(isMasterDevice()) {
         if(sKey == MSR_KEY_SYNC)   { KeyBitNo &= ~(MSR_KEY_SYNC); }
@@ -199,7 +199,7 @@ static void setKeyStatus(KEYCODE_DEF_E sKey)
     return ;
 }
 
-void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag)
+void ledDisplayFlashEnable(u8 ledNo, bool bFlag)
 {
     /* Check ledNo */
     if(isMasterDevice()) {
@@ -215,10 +215,10 @@ void ledDisplayFlashEnable(unsigned char ledNo, bool bFlag)
     }
 }
 
-void ledDisplayClose(unsigned char ledNo)
+void ledDisplayClose(u8 ledNo)
 {
-    unsigned char tabCode = 0x00;
-    unsigned short bufVal = (0x1 << ledNo);
+    u8 tabCode = 0x00;
+    u16 bufVal = (0x1 << ledNo);
     
     /* Check ledNo */
     if(isMasterDevice()) {
@@ -253,10 +253,10 @@ void ledDisplayClose(unsigned char ledNo)
 }
 
 /* ledNo: Master = 0 -5  Slave = 0 -9 */
-void ledDisplayCtrl(unsigned char ledNo, char dispVal)
+void ledDisplayCtrl(u8 ledNo, i8 dispVal)
 {
-    unsigned char tabCode = 0x00;
-    unsigned short bufVal = (0x1 << ledNo);
+    u8 tabCode = 0x00;
+    u16 bufVal = (0x1 << ledNo);
 
     /* Check ledNo */
     if(isMasterDevice()) {
@@ -363,8 +363,8 @@ void ledDisplayCtrl(unsigned char ledNo, char dispVal)
 
 
 #if TEST_MODE
-static unsigned int tmp = 0;
-void LedDisplay_Test(char Val)
+static u32 tmp = 0;
+void LedDisplay_Test(i8 Val)
 {
     ledDisplayCtrl(0,Val);	    //上电显示0~6
     ledDisplayCtrl(1,Val);
@@ -420,7 +420,7 @@ bool LedKeyScan_Test(void)
 #endif
 
 /********************* Timer2ÖÐ¶Ïº¯Êý************************/
-static unsigned char iSecCounter = 0;
+static u8 iSecCounter = 0;
 static bool iDispFlashFlag = 0;
 void timer1_int (void) interrupt TIMER1_VECTOR
 {

@@ -55,17 +55,17 @@ u8 ADXL345_RD_Reg(u8 addr)
 } 
 //读取ADXL的平均值
 //x,y,z:读取10次后取平均值
-void ADXL345_RD_Avval(short *x,short *y,short *z)
+void ADXL345_RD_Avval(i16 *x,i16 *y,i16 *z)
 {
- short tx=0,ty=0,tz=0;   
+ i16 tx=0,ty=0,tz=0;   
  u8 i; 
  for(i=0;i<10;i++)
  {
   ADXL345_RD_XYZ(x,y,z);
   delay_ms(10);
-  tx+=(short)*x;
-  ty+=(short)*y;
-  tz+=(short)*z;   
+  tx+=(i16)*x;
+  ty+=(i16)*y;
+  tz+=(i16)*z;   
  }
  *x=tx/10;
  *y=ty/10;
@@ -73,11 +73,11 @@ void ADXL345_RD_Avval(short *x,short *y,short *z)
 }
 //自动校准
 //xval,yval,zval:x,y,z轴的校准值
-void ADXL345_AUTO_Adjust(char *xval,char *yval,char *zval)
+void ADXL345_AUTO_Adjust(i8 *xval,i8 *yval,i8 *zval)
 {
- short tx,ty,tz;
+ i16 tx,ty,tz;
  u8 i;
- short offx=0,offy=0,offz=0;
+ i16 offx=0,offy=0,offz=0;
  ADXL345_WR_Reg(POWER_CTL,0x00);     //先进入休眠模式.
  delay_ms(100);
  ADXL345_WR_Reg(DATA_FORMAT,0X2B); //低电平中断输出,13位全分辨率,输出数据右对齐,16g量程
@@ -108,7 +108,7 @@ void ADXL345_AUTO_Adjust(char *xval,char *yval,char *zval)
 }
 //读取3个轴的数据
 //x,y,z:读取到的数据
-void ADXL345_RD_XYZ(short *x,short *y,short *z)
+void ADXL345_RD_XYZ(i16 *x,i16 *y,i16 *z)
 {
  u8 buf[6];
  u8 i;
@@ -127,17 +127,17 @@ void ADXL345_RD_XYZ(short *x,short *y,short *z)
   else buf[i]=IIC_Read_Byte(1); //读取一个字节,继续读,发送ACK
   }            
     IIC_Stop();     //产生一个停止条件
- *x=(short)(((u16)buf[1]<<8)+buf[0]);     
- *y=(short)(((u16)buf[3]<<8)+buf[2]);     
- *z=(short)(((u16)buf[5]<<8)+buf[4]);    
+ *x=(i16)(((u16)buf[1]<<8)+buf[0]);     
+ *y=(i16)(((u16)buf[3]<<8)+buf[2]);     
+ *z=(i16)(((u16)buf[5]<<8)+buf[4]);    
 }
 //读取ADXL345的数据times次,再取平均
 //x,y,z:读到的数据
 //times:读取多少次
-void ADXL345_Read_Average(short *x,short *y,short *z,u8 times)
+void ADXL345_Read_Average(i16 *x,i16 *y,i16 *z,u8 times)
 {
  u8 i;
- short tx,ty,tz;
+ i16 tx,ty,tz;
  *x=0;
  *y=0;
  *z=0;
@@ -160,7 +160,7 @@ void ADXL345_Read_Average(short *x,short *y,short *z,u8 times)
 //x,y,z:x,y,z方向的重力加速度分量(不需要单位,直接数值即可)
 //dir:要获得的角度.0,与Z轴的角度;1,与X轴的角度;2,与Y轴的角度.
 //返回值:角度值.单位0.1°.
-short ADXL345_Get_Angle(float x,float y,float z,u8 dir)
+i16 ADXL345_Get_Angle(float x,float y,float z,u8 dir)
 {
  float temp;
   float res=0;

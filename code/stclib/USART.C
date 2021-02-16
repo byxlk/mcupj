@@ -6,10 +6,10 @@
 #include<stdarg.h>
 
 COMx_Define	COM1,COM2;
-u8 xdata TX1_Buffer[COM_TX1_Lenth];	//·¢ËÍ»º³å
-u8 xdata RX1_Buffer[COM_RX1_Lenth];	//½ÓÊÕ»º³å
-u8 xdata TX2_Buffer[COM_TX2_Lenth];	//·¢ËÍ»º³å
-u8 xdata RX2_Buffer[COM_RX2_Lenth];	//½ÓÊÕ»º³å
+u8 xdata TX1_Buffer[COM_TX1_Lenth];	//ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
+u8 xdata RX1_Buffer[COM_RX1_Lenth];	//ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½
+u8 xdata TX2_Buffer[COM_TX2_Lenth];	//ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
+u8 xdata RX2_Buffer[COM_RX2_Lenth];	//ï¿½ï¿½ï¿½Õ»ï¿½ï¿½ï¿½
 
 u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 {
@@ -28,14 +28,14 @@ u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 		for(i=0; i<COM_TX1_Lenth; i++)	TX1_Buffer[i] = 0;
 		for(i=0; i<COM_RX1_Lenth; i++)	RX1_Buffer[i] = 0;
 
-		if(COMx->UART_Mode > UART_9bit_BRTx)	return 2;	//Ä£Ê½´íÎó
-		if(COMx->UART_Polity == PolityHigh)		PS = 1;	//¸ßÓÅÏÈ¼¶ÖÐ¶Ï
-		else									PS = 0;	//µÍÓÅÏÈ¼¶ÖÐ¶Ï
+		if(COMx->UART_Mode > UART_9bit_BRTx)	return 2;	//Ä£Ê½ï¿½ï¿½ï¿½ï¿½
+		if(COMx->UART_Polity == PolityHigh)		PS = 1;	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½Ð¶ï¿½
+		else									PS = 0;	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½Ð¶ï¿½
 		SCON = (SCON & 0x3f) | COMx->UART_Mode;
-		if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))	//¿É±ä²¨ÌØÂÊ
+		if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))	//ï¿½É±ä²¨ï¿½ï¿½ï¿½ï¿½
 		{
-			j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;	//°´1T¼ÆËã
-			if(j >= 65536UL)	return 2;	//´íÎó
+			j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;	//ï¿½ï¿½1Tï¿½ï¿½ï¿½ï¿½
+			if(j >= 65536UL)	return 2;	//ï¿½ï¿½ï¿½ï¿½
 			j = 65536UL - j;
 			if(COMx->UART_BRT_Use == BRT_Timer1)
 			{
@@ -46,9 +46,9 @@ u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 				AUXR |=  (1<<6);	//Timer1 set as 1T mode
 				TH1 = (u8)(j>>8);
 				TL1 = (u8)j;
-				ET1 = 0;	//½ûÖ¹ÖÐ¶Ï
-				TMOD &= ~0x40;	//¶¨Ê±
-				INT_CLKO &= ~0x02;	//²»Êä³öÊ±ÖÓ
+				ET1 = 0;	//ï¿½ï¿½Ö¹ï¿½Ð¶ï¿½
+				TMOD &= ~0x40;	//ï¿½ï¿½Ê±
+				INT_CLKO &= ~0x02;	//ï¿½ï¿½ï¿½ï¿½ï¿½Ê±ï¿½ï¿½
 				TR1  = 1;
 			}
 			else if(COMx->UART_BRT_Use == BRT_Timer2)
@@ -59,28 +59,28 @@ u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 				AUXR |=  (1<<2);	//Timer2 set as 1T mode
 				TH2 = (u8)(j>>8);
 				TL2 = (u8)j;
-				IE2  &= ~(1<<2);	//½ûÖ¹ÖÐ¶Ï
-				AUXR &= ~(1<<3);	//¶¨Ê±
+				IE2  &= ~(1<<2);	//ï¿½ï¿½Ö¹ï¿½Ð¶ï¿½
+				AUXR &= ~(1<<3);	//ï¿½ï¿½Ê±
 				AUXR |=  (1<<4);	//Timer run enable
 			}
-			else return 2;	//´íÎó
+			else return 2;	//ï¿½ï¿½ï¿½ï¿½
 		}
 		else if(COMx->UART_Mode == UART_ShiftRight)
 		{
-			if(COMx->BaudRateDouble == ENABLE)	AUXR |=  (1<<5);	//¹Ì¶¨²¨ÌØÂÊSysClk/2
-			else								AUXR &= ~(1<<5);	//¹Ì¶¨²¨ÌØÂÊSysClk/12
+			if(COMx->BaudRateDouble == ENABLE)	AUXR |=  (1<<5);	//ï¿½Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½SysClk/2
+			else								AUXR &= ~(1<<5);	//ï¿½Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½SysClk/12
 		}
-		else if(COMx->UART_Mode == UART_9bit)	//¹Ì¶¨²¨ÌØÂÊSysClk*2^SMOD/64
+		else if(COMx->UART_Mode == UART_9bit)	//ï¿½Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½SysClk*2^SMOD/64
 		{
-			if(COMx->BaudRateDouble == ENABLE)	PCON |=  (1<<7);	//¹Ì¶¨²¨ÌØÂÊSysClk/32
-			else								PCON &= ~(1<<7);	//¹Ì¶¨²¨ÌØÂÊSysClk/64
+			if(COMx->BaudRateDouble == ENABLE)	PCON |=  (1<<7);	//ï¿½Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½SysClk/32
+			else								PCON &= ~(1<<7);	//ï¿½Ì¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½SysClk/64
 		}
-		if(COMx->UART_Interrupt == ENABLE)	ES = 1;	//ÔÊÐíÖÐ¶Ï
-		else								ES = 0;	//½ûÖ¹ÖÐ¶Ï
-		if(COMx->UART_RxEnable == ENABLE)	REN = 1;	//ÔÊÐí½ÓÊÕ
-		else								REN = 0;	//½ûÖ¹½ÓÊÕ
-		P_SW1 = (P_SW1 & 0x3f) | (COMx->UART_P_SW & 0xc0);	//ÇÐ»»IO
-		if(COMx->UART_RXD_TXD_Short == ENABLE)	PCON2 |=  (1<<4);	//ÄÚ²¿¶ÌÂ·RXDÓëTXD, ×öÖÐ¼Ì, ENABLE,DISABLE
+		if(COMx->UART_Interrupt == ENABLE)	ES = 1;	//ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+		else								ES = 0;	//ï¿½ï¿½Ö¹ï¿½Ð¶ï¿½
+		if(COMx->UART_RxEnable == ENABLE)	REN = 1;	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		else								REN = 0;	//ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
+		P_SW1 = (P_SW1 & 0x3f) | (COMx->UART_P_SW & 0xc0);	//ï¿½Ð»ï¿½IO
+		if(COMx->UART_RXD_TXD_Short == ENABLE)	PCON2 |=  (1<<4);	//ï¿½Ú²ï¿½ï¿½ï¿½Â·RXDï¿½ï¿½TXD, ï¿½ï¿½ï¿½Ð¼ï¿½, ENABLE,DISABLE
 		else									PCON2 &= ~(1<<4);
 		return	0;
 	}
@@ -97,81 +97,81 @@ u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
 		for(i=0; i<COM_TX2_Lenth; i++)	TX2_Buffer[i] = 0;
 		for(i=0; i<COM_RX2_Lenth; i++)	RX2_Buffer[i] = 0;
 
-		if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))	//¿É±ä²¨ÌØÂÊ
+		if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))	//ï¿½É±ä²¨ï¿½ï¿½ï¿½ï¿½
 		{
-			if(COMx->UART_Polity == PolityHigh)		IP2 |=  1;	//¸ßÓÅÏÈ¼¶ÖÐ¶Ï
-			else									IP2 &= ~1;	//µÍÓÅÏÈ¼¶ÖÐ¶Ï
+			if(COMx->UART_Polity == PolityHigh)		IP2 |=  1;	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½Ð¶ï¿½
+			else									IP2 &= ~1;	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½Ð¶ï¿½
 			if(COMx->UART_Mode == UART_9bit_BRTx)	S2CON |=  (1<<7);	//9bit
 			else									S2CON &= ~(1<<7);	//8bit
-			j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;	//°´1T¼ÆËã
-			if(j >= 65536UL)	return 2;	//´íÎó
+			j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;	//ï¿½ï¿½1Tï¿½ï¿½ï¿½ï¿½
+			if(j >= 65536UL)	return 2;	//ï¿½ï¿½ï¿½ï¿½
 			j = 65536UL - j;
 			AUXR &= ~(1<<4);	//Timer stop
 			AUXR &= ~(1<<3);	//Timer2 set As Timer
 			AUXR |=  (1<<2);	//Timer2 set as 1T mode
 			TH2 = (u8)(j>>8);
 			TL2 = (u8)j;
-			IE2  &= ~(1<<2);	//½ûÖ¹ÖÐ¶Ï
+			IE2  &= ~(1<<2);	//ï¿½ï¿½Ö¹ï¿½Ð¶ï¿½
 			AUXR |=  (1<<4);	//Timer run enable
 		}
-		else	return 2;	//Ä£Ê½´íÎó
-		if(COMx->UART_Interrupt == ENABLE)	IE2   |=  1;		//ÔÊÐíÖÐ¶Ï
-		else								IE2   &= ~1;		//½ûÖ¹ÖÐ¶Ï
-		if(COMx->UART_RxEnable == ENABLE)	S2CON |=  (1<<4);	//ÔÊÐí½ÓÊÕ
-		else								S2CON &= ~(1<<4);	//½ûÖ¹½ÓÊÕ
-		P_SW2 = (P_SW2 & ~1) | (COMx->UART_P_SW & 0x01);	//ÇÐ»»IO
+		else	return 2;	//Ä£Ê½ï¿½ï¿½ï¿½ï¿½
+		if(COMx->UART_Interrupt == ENABLE)	IE2   |=  1;		//ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
+		else								IE2   &= ~1;		//ï¿½ï¿½Ö¹ï¿½Ð¶ï¿½
+		if(COMx->UART_RxEnable == ENABLE)	S2CON |=  (1<<4);	//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		else								S2CON &= ~(1<<4);	//ï¿½ï¿½Ö¹ï¿½ï¿½ï¿½ï¿½
+		P_SW2 = (P_SW2 & ~1) | (COMx->UART_P_SW & 0x01);	//ï¿½Ð»ï¿½IO
 	}
 
     return 0;
 }
 
 
-/*************** ×°ÔØ´®¿Ú·¢ËÍ»º³å *******************************/
-void TX1_write2buff(u8 dat)	//Ð´Èë·¢ËÍ»º³å£¬Ö¸Õë+1
+/*************** ×°ï¿½Ø´ï¿½ï¿½Ú·ï¿½ï¿½Í»ï¿½ï¿½ï¿½ *******************************/
+void TX1_write2buff(u8 dat)	//Ð´ï¿½ë·¢ï¿½Í»ï¿½ï¿½å£¬Ö¸ï¿½ï¿½+1
 {
     while(COM1.B_TX_busy);
     if(dat == '\n') {
         TX1_Buffer[COM1.TX_write] = 0x0D;
         if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
-        TX1_Buffer[COM1.TX_write] = 0x0A;	//×°·¢ËÍ»º³å
+        TX1_Buffer[COM1.TX_write] = 0x0A;	//×°ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
         if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
     } else {
-        TX1_Buffer[COM1.TX_write] = dat;	//×°·¢ËÍ»º³å
+        TX1_Buffer[COM1.TX_write] = dat;	//×°ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
         if(++COM1.TX_write >= COM_TX1_Lenth)	COM1.TX_write = 0;
     }
 
-	if(COM1.B_TX_busy == 0)		//¿ÕÏÐ
+	if(COM1.B_TX_busy == 0)		//ï¿½ï¿½ï¿½ï¿½
 	{  
-		COM1.B_TX_busy = 1;		//±êÖ¾Ã¦
-		TI = 1;					//´¥·¢·¢ËÍÖÐ¶Ï
+		COM1.B_TX_busy = 1;		//ï¿½ï¿½Ö¾Ã¦
+		TI = 1;					//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 	}
 }
 
-void TX2_write2buff(u8 dat)	//Ð´Èë·¢ËÍ»º³å£¬Ö¸Õë+1
+void TX2_write2buff(u8 dat)	//Ð´ï¿½ë·¢ï¿½Í»ï¿½ï¿½å£¬Ö¸ï¿½ï¿½+1
 {
     while(COM2.B_TX_busy);
-	TX2_Buffer[COM2.TX_write] = dat;	//×°·¢ËÍ»º³å
+	TX2_Buffer[COM2.TX_write] = dat;	//×°ï¿½ï¿½ï¿½Í»ï¿½ï¿½ï¿½
 	if(++COM2.TX_write >= COM_TX2_Lenth)	COM2.TX_write = 0;
 
-	if(COM2.B_TX_busy == 0)		//¿ÕÏÐ
+	if(COM2.B_TX_busy == 0)		//ï¿½ï¿½ï¿½ï¿½
 	{  
-		COM2.B_TX_busy = 1;		//±êÖ¾Ã¦
-		SET_TI2();				//´¥·¢·¢ËÍÖÐ¶Ï
+		COM2.B_TX_busy = 1;		//ï¿½ï¿½Ö¾Ã¦
+		SET_TI2();				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 	}
 }
 
 void PrintString1(u8 *puts)
 {
-    for (; ((*puts != 0) && (*puts != '\0'));	puts++)  TX1_write2buff(*puts); 	//Óöµ½Í£Ö¹·û0½áÊø
+    for (; ((*puts != 0) && (*puts != '\0'));	puts++)  TX1_write2buff(*puts); 	//ï¿½ï¿½ï¿½ï¿½Í£Ö¹ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½
 }
 
 void PrintString2(u8 *puts)
 {
-    for (; *puts != 0;	puts++)  TX2_write2buff(*puts); 	//Óöµ½Í£Ö¹·û0½áÊø
+    for (; *puts != 0;	puts++)  TX2_write2buff(*puts); 	//ï¿½ï¿½ï¿½ï¿½Í£Ö¹ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½
 }
 
 /*
-void COMx_write2buff(COMx_Define *COMx, u8 dat)	//Ð´Èë·¢ËÍ»º³å£¬Ö¸Õë+1
+void COMx_write2buff(COMx_Define *COMx, u8 dat)	//Ð´ï¿½ë·¢ï¿½Í»ï¿½ï¿½å£¬Ö¸ï¿½ï¿½+1
 {
 	if(COMx->id == 1)	TX1_write2buff(dat);
 	if(COMx->id == 2)	TX2_write2buff(dat);
@@ -179,21 +179,21 @@ void COMx_write2buff(COMx_Define *COMx, u8 dat)	//Ð´Èë·¢ËÍ»º³å£¬Ö¸Õë+1
 
 void PrintString(COMx_Define *COMx, u8 *puts)
 {
-    for (; *puts != 0;	puts++)  COMx_write2buff(COMx,*puts); 	//Óöµ½Í£Ö¹·û0½áÊø
+    for (; *puts != 0;	puts++)  COMx_write2buff(COMx,*puts); 	//ï¿½ï¿½ï¿½ï¿½Í£Ö¹ï¿½ï¿½0ï¿½ï¿½ï¿½ï¿½
 }
 */
 
-char putchar(char c)
+i8 putchar(i8 c)
 {
-    TX1_write2buff((unsigned char)c);
+    TX1_write2buff((u8)c);
     return c;
 }
 
 
-//void uart_printf(const char *fmt,...)
+//void uart_printf(const i8 *fmt,...)
 //{
 //	va_list ap;
-//	char xdata string[128];//??????RAM,?????RAM,????????RAM??(???1024)
+//	i8 xdata string[128];//??????RAM,?????RAM,????????RAM??(???1024)
 	
 //	va_start(ap,fmt);
 //	vsprintf(string,fmt,ap);//???????sprintf??,?????,??????,????
@@ -201,7 +201,7 @@ char putchar(char c)
 //	va_end(ap);
 //}
 
-/********************* UART1ÖÐ¶Ïº¯Êý************************/
+/********************* UART1ï¿½Ð¶Ïºï¿½ï¿½ï¿½************************/
 void UART1_int (void) interrupt UART1_VECTOR
 {
 	if(RI)
@@ -227,7 +227,7 @@ void UART1_int (void) interrupt UART1_VECTOR
 	}
 }
 
-/********************* UART2ÖÐ¶Ïº¯Êý************************/
+/********************* UART2ï¿½Ð¶Ïºï¿½ï¿½ï¿½************************/
 void UART2_int (void) interrupt UART2_VECTOR
 {
 	if(RI2)
