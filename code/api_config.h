@@ -3,11 +3,12 @@
 
 #include "STC15Fxxxx.H"
 #include "USART.h"
+#include "EEPROM.h"
 #include "stdio.h"
 
 /*********************************************************/
 
-#define DEBUG                      (1)	//开启调试模式
+#define DEBUG                      (0)	//开启调试模式
 #define TEST_MODE                  (0)
 //#define LOGD                       uart_printf
 #define LOGD                       printf
@@ -142,6 +143,34 @@ typedef struct {
     KEYCODE_DEF_E secondKeyCode;
     KEYCODE_DEF_E firstKeyCode;
 } KEYCODE_REC_S;
+
+
+#define DEV_NUM (32)
+
+typedef struct {
+    u8 devAddr;
+    u8 cpuid[8];
+} DEV_INFO_S;
+
+typedef struct  {
+    u8 devnum; 
+    DEV_INFO_S devinfo[DEV_NUM];
+} ADDR_CONFIGURE_S;
+
+typedef struct 
+{
+    /* System */
+    u32 reboot_counter; /* reboot times  */
+
+    /* Master Device Infomation and Configure */
+
+    /* Slave Device Infomation and Configure */
+    u8 slaveDeviceIsAlreadyConfigAddr;
+    u8 slave_devnum; /* Slave device number*/
+    DEV_INFO_S devinfo[DEV_NUM];
+
+} SYS_INFO_S;
+
 /*********************************************************/
 /* Common */
 void delay_us(u32 t);
@@ -153,6 +182,10 @@ bool isMasterDevice(void);
 void init_Watch_Dog(void);
 void Reboot_System(void);
 void PrintSystemInfoToSerial(bool msterFlag);
+bool checkAddrSyncStatus(void);
+void readInitSystemInfo(void);
+void updateRebootCounterInfo(void);
+SYS_INFO_S *getSystemInfo(void);
 
 /* Led Control */
 void ledStatusManageService(u32 iSec);

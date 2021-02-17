@@ -1,0 +1,78 @@
+C51 COMPILER V9.52.0.0   MAX485                                                            02/18/2021 00:01:37 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE MAX485
+OBJECT MODULE PLACED IN .\Objects\max485.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\max485.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJECTEXT
+                    -END PRINT(.\Listing\max485.lst) OBJECT(.\Objects\max485.obj)
+
+line level    source
+
+   1          #include "api_config.h"
+   2          #include "USART.h"
+   3          
+   4          /* BOF | CMD | TokenID | ADDR | DataLen | DATA | CS | EOF | */
+   5          /*  1  |  1  |    2    |   1  |    1    |   4  |  2 |  1  | */
+   6          /* 0x68  0x00    0x00    0x00      0x01  */
+   7          /* Command Format: AT+CMD=addr#data */
+   8          /**/
+   9          // DLT645 Frame EOF/BOF Flag
+  10          #define DLT645_FRAME_BOF   0x68
+  11          #define DLT645_FRAME_EOF   0x16
+  12          #define MSR_ADDR 0x00
+  13          
+  14          static void rs485_enable_send(void)
+  15          {
+  16   1          MAX485_EN = 1;
+  17   1      }
+  18          
+  19          static void rs485_enable_recv(void)
+  20          {
+  21   1          MAX485_EN = 0;
+  22   1      }
+  23          
+  24          
+  25          //发送一帧数据包
+  26          //SendCmdDataTo485("AT+XXX");
+  27          bool SendATCommand(u8 *cmd)
+  28          {
+  29   1              //u8 i;
+  30   1      
+  31   1          if(cmd == NULL) return FALSE;
+  32   1      
+  33   1          rs485_enable_send();//485发送数据使能
+  34   1          delay_ms(2);
+  35   1      
+  36   1          for (; ((*cmd != 0) && (*cmd != '\0'));     cmd++) {
+  37   2              TX2_write2buff(*cmd);
+  38   2              //delay_ms(20);
+  39   2          }
+  40   1      
+  41   1          delay_ms(2);
+  42   1              rs485_enable_recv();//数据发送完毕485等待接受数据
+  43   1      
+  44   1          return TRUE;
+  45   1      }
+  46          
+  47          
+  48          void slaveDeviceAddrConfigure(void)
+  49          {
+  50   1          
+  51   1      }
+  52          
+
+
+C51 COMPILER V9.52.0.0   MAX485                                                            02/18/2021 00:01:37 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     98    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       3
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

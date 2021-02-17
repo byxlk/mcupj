@@ -1,0 +1,1465 @@
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE SD3178
+OBJECT MODULE PLACED IN .\Objects\sd3178.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\sd3178.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJECTEXT
+                    -END PRINT(.\Listing\sd3178.lst) OBJECT(.\Objects\sd3178.obj)
+
+line level    source
+
+   1          #pragma code
+   2          #include <intrins.h>
+   3          #include "api_config.h"
+   4          
+   5          /******************** 充电使能宏定义 ********************/
+   6          #define         EN_CHARGE                       (0)     // 0:禁用充电功能  1:使能充电功能
+   7          
+   8          /******************** RTC Device address ********************/
+   9          #define         RTC_Address                     (0x64)
+  10          
+  11          /******************** Alarm register ********************/
+  12          #define         Alarm_SC                (0x07)
+  13          #define         Alarm_MN                (0x08)
+  14          #define         Alarm_HR                (0x09)
+  15          #define         Alarm_WK                (0x0A)
+  16          #define         Alarm_DY                (0x0B)
+  17          #define         Alarm_MO                (0x0C)
+  18          #define         Alarm_YR                (0x0D)
+  19          #define         Alarm_EN                (0x0E)
+  20          
+  21          /******************** Control register ********************/
+  22          #define         CTR1                            (0x0F)
+  23          #define         CTR2                            (0x10)
+  24          #define         CTR3                            (0x11)
+  25          
+  26          /***************** Timer Counter Register ***********************/
+  27          #define         Timer_Counter1      (0x13)
+  28          #define         Timer_Counter2      (0x14)
+  29          #define         Timer_Counter3      (0x15)
+  30          
+  31          /******************** Battery register ********************/
+  32          #define         CHARGE_MG                       (0x18)          //充电管理寄存器地址
+  33          #define         Bat_bit8                        (0x1A)          //电量最高位寄存器地址
+  34          #define         Bat_Low8                        (0x1B)          //电量低八位寄存器地址
+  35          
+  36          /**********************************************************/
+  37          #define         IDcode                          (0x72)          //8字节ID号起始地址
+  38          #define         UserRam_30H                 (0x30)              //用户ram 30H地址
+  39          
+  40          //*********变量及IO口定义*********
+  41          u8              Sram[8];        //通用数据缓存器
+  42          typedef struct
+  43          {
+  44                  u8  second;
+  45                  u8      minute;
+  46                  u8      hour;
+  47                  u8      week;
+  48                  u8      day;
+  49                  u8      month;
+  50                  u8      year;
+  51          }S_Time;        
+  52          
+  53          //初始化时间结构体变量（设置时间：2016年1月26日 14:59:55  星期二）
+  54          //           55秒 59分 14时 周二 26日 1月 16年
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 2   
+
+  55          S_Time  RTC = {0x55,0x59,0x14,0x02,0x26,0x01,0x16};     
+  56          
+  57          /********函数声明********/
+  58          //u8 I2CReadOneByte(u8 add);//读一字节
+  59          //u8 I2CReadSerial(u8 Address, u8 length,u8 *ps);//连续读
+  60          //u8 I2CWriteSerial(u8 Address, u8 length,u8 *ps);//连续写
+  61          //bool I2CWriteDate(S_Time      *SetRTC);//写时间    
+  62          //bool I2CReadDate(S_Time       *psRTC);//读时间
+  63          //bool WriteRTC_Enable(void);//写允许
+  64          //bool WriteRTC_Disable(void);//写禁止
+  65          //bool I2CWriteOneByte(u8 add, u8 date);//写一字节
+  66          
+  67          /*********I2C延时4us***********/
+  68          void I2CWait(void)//4us  @22.1184MHz
+  69          {       
+  70   1              u8 i;
+  71   1      
+  72   1              _nop_();
+  73   1              _nop_();
+  74   1              i = 19;
+  75   1              while (--i);
+  76   1      }
+  77          
+  78          /********开启I2C总线********/
+  79          static bool I2CStart(void)
+  80          {
+  81   1              MSR_SD3178_SDA = 1;
+  82   1              I2CWait();
+  83   1              MSR_SD3178_SCK = 1;
+  84   1              I2CWait();
+  85   1      
+  86   1              if(!MSR_SD3178_SDA) return FALSE;       //SDA线为低电平则总线忙,退出
+  87   1      
+  88   1              MSR_SD3178_SDA = 0;
+  89   1              I2CWait();
+  90   1              MSR_SD3178_SCK = 0;
+  91   1              I2CWait();
+  92   1              return TRUE;
+  93   1      }
+  94          
+  95          /********停止I2C总线*******/
+  96          static void I2CStop(void)
+  97          {
+  98   1              MSR_SD3178_SDA = 0;
+  99   1              I2CWait();
+ 100   1              MSR_SD3178_SCK = 0;
+ 101   1              I2CWait();
+ 102   1              MSR_SD3178_SCK = 1;
+ 103   1              I2CWait();
+ 104   1              MSR_SD3178_SDA = 1;
+ 105   1      }
+ 106          
+ 107          /*********发送 ACK*********/
+ 108          static void I2CAck(void)
+ 109          {       
+ 110   1              MSR_SD3178_SDA = 0;
+ 111   1              MSR_SD3178_SCK = 0;
+ 112   1              I2CWait();
+ 113   1              MSR_SD3178_SCK = 1;
+ 114   1              I2CWait();
+ 115   1              MSR_SD3178_SCK = 0;
+ 116   1      }
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 3   
+
+ 117          
+ 118          /*********发送NO ACK*********/
+ 119          static void I2CNoAck(void)
+ 120          {       
+ 121   1              MSR_SD3178_SDA = 1;
+ 122   1              MSR_SD3178_SCK = 0;
+ 123   1              I2CWait();
+ 124   1              MSR_SD3178_SCK = 1;
+ 125   1              I2CWait();
+ 126   1              MSR_SD3178_SCK = 0;
+ 127   1      }
+ 128          
+ 129          /*********读取ACK信号*********/
+ 130          static bool I2CWaitAck(void)     //返回为:1=有ACK,0=无ACK
+ 131          {
+ 132   1              MSR_SD3178_SCK = 0;
+ 133   1              MSR_SD3178_SDA = 1;             //设置SDA为输入（其它类型的单片机需要配置IO输入输出寄存器�
+             -�
+ 134   1              I2CWait();
+ 135   1              MSR_SD3178_SCK = 1;
+ 136   1              I2CWait();
+ 137   1              while(MSR_SD3178_SDA)
+ 138   1              {
+ 139   2                      MSR_SD3178_SCK = 0;
+ 140   2                      return FALSE;
+ 141   2              }
+ 142   1              MSR_SD3178_SCK = 0;
+ 143   1              return TRUE;
+ 144   1      }
+ 145          
+ 146          /************I2C发送8Bit*************/
+ 147          static void I2CSendByte(u8 demand) //数据从高位到低位//
+ 148          {
+ 149   1              u8 i = 8;                                                    
+ 150   1              
+ 151   1              while(i--)
+ 152   1              {
+ 153   2                      MSR_SD3178_SCK = 0;
+ 154   2                      _nop_();
+ 155   2                      MSR_SD3178_SDA=(bool)(demand&0x80);
+ 156   2                      demand <<= 1;
+ 157   2                      I2CWait();
+ 158   2                      MSR_SD3178_SCK = 1;
+ 159   2                      I2CWait();
+ 160   2              }
+ 161   1              MSR_SD3178_SCK = 0;
+ 162   1      }
+ 163          
+ 164          /*********I2C读入8Bit*********/
+ 165          static u8 I2CReceiveByte(void)      //数据从高位到低位//
+ 166          {
+ 167   1              u8 i = 8;
+ 168   1              u8 ddata = 0;
+ 169   1              MSR_SD3178_SDA = 1;                     //设置SDA为输入（其它类型的单片机需要配置IO输入输出寄存器�
+             -��
+ 170   1              while(i--)
+ 171   1              {
+ 172   2                      ddata <<= 1;      //数据从高位开始读取
+ 173   2                      MSR_SD3178_SCK = 0;
+ 174   2                      I2CWait();
+ 175   2                      MSR_SD3178_SCK = 1;
+ 176   2                      I2CWait();      //从高位开始 ddata|=MSR_SD3178_SDA;ddata<<=1
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 4   
+
+ 177   2                      if(MSR_SD3178_SDA)
+ 178   2                      {
+ 179   3                              ddata |= 0x01;
+ 180   3                      }
+ 181   2              }
+ 182   1              MSR_SD3178_SCK = 0;
+ 183   1              return ddata;
+ 184   1      }
+ 185          
+ 186          /******I2C写一个字节******/
+ 187          static bool I2CWriteOneByte(u8 add, u8 date)
+ 188          {               
+ 189   1              if(!I2CStart())return FALSE;
+ 190   1              I2CSendByte(RTC_Address);      
+ 191   1              if(!I2CWaitAck()){I2CStop(); return FALSE;} 
+ 192   1              I2CSendByte(add);               //设置写地址      
+ 193   1              I2CWaitAck();   
+ 194   1              I2CSendByte(date);              //写数据
+ 195   1              I2CWaitAck();   
+ 196   1              I2CStop(); 
+ 197   1              return  TRUE;
+ 198   1      }
+ 199          
+ 200          /******I2C读一个字节程序******/
+ 201          static u8 I2CReadOneByte(u8 add)
+ 202          {               
+ 203   1              u8 dat;
+ 204   1              if(!I2CStart())return FALSE;
+ 205   1              I2CSendByte(RTC_Address);      
+ 206   1              if(!I2CWaitAck()){I2CStop(); return FALSE;}
+ 207   1          I2CSendByte(add);           //设置要读的地址
+ 208   1              I2CWaitAck();
+ 209   1              I2CStart();     
+ 210   1              I2CSendByte(RTC_Address+1);     
+ 211   1              I2CWaitAck();   
+ 212   1              dat = I2CReceiveByte();         //读数据
+ 213   1              I2CNoAck();
+ 214   1              I2CStop(); 
+ 215   1              return  dat;
+ 216   1      }
+ 217          
+ 218          /******RTC写允许程序******/
+ 219          static bool WriteRTC_Enable(void)
+ 220          {               
+ 221   1              if(!I2CWriteOneByte(CTR2,0x80))return FALSE;
+ 222   1              I2CWriteOneByte(CTR1,0x84);
+ 223   1              return  TRUE;
+ 224   1      }
+ 225          
+ 226          /******RTC写禁止程序******/
+ 227          static bool WriteRTC_Disable(void)
+ 228          {               
+ 229   1              if(!I2CWriteOneByte(CTR1,0))return FALSE;
+ 230   1              I2CWriteOneByte(CTR2,0);
+ 231   1              return  TRUE;
+ 232   1      }
+ 233          
+ 234          /******读RTC实时数据寄存器******/
+ 235          bool I2CReadDate(S_Time *psRTC)
+ 236          {
+ 237   1              
+ 238   1              if(!I2CStart())return FALSE;
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 5   
+
+ 239   1              I2CSendByte(RTC_Address+1); 
+ 240   1          if(!I2CWaitAck()){I2CStop(); return FALSE;}
+ 241   1              psRTC->second = I2CReceiveByte();
+ 242   1              I2CAck();
+ 243   1              psRTC->minute = I2CReceiveByte();
+ 244   1              I2CAck();
+ 245   1              psRTC->hour = I2CReceiveByte() & 0x3f;
+ 246   1              I2CAck();
+ 247   1              psRTC->week = I2CReceiveByte();
+ 248   1              I2CAck();
+ 249   1              psRTC->day = I2CReceiveByte();
+ 250   1              I2CAck();
+ 251   1              psRTC->month = I2CReceiveByte();
+ 252   1              I2CAck();
+ 253   1              psRTC->year = I2CReceiveByte();
+ 254   1              I2CNoAck();             //读时间完成，发送NoAck
+ 255   1              I2CStop();
+ 256   1              return  TRUE;
+ 257   1      }
+ 258          
+ 259          /******写RTC实时数据寄存器******/
+ 260          bool I2CWriteDate(S_Time *psRTC)        //写时间操作要求一次对实时时间寄存器(00H~06H)依次写�
+             -�，
+ 261          {                               //不可以单独对7个时间数据中的某一位进行写操作,否则�
+             -��能会引起时间数据的错误进位. 
+ 262   1                                      //要修改其中某一个数据 , 应一次性写入全部 7 个实时时
+             -钟数据.
+ 263   1      
+ 264   1              WriteRTC_Enable();                              //使能，开锁
+ 265   1              
+ 266   1              I2CStart();
+ 267   1              I2CSendByte(RTC_Address); 
+ 268   1              if(!I2CWaitAck()){I2CStop(); return FALSE;}
+ 269   1              I2CSendByte(0x00);                      //设置写起始地址      
+ 270   1              I2CWaitAck();   
+ 271   1              I2CSendByte(psRTC->second);             //second     
+ 272   1              I2CWaitAck();   
+ 273   1              I2CSendByte(psRTC->minute);             //minute      
+ 274   1              I2CWaitAck();   
+ 275   1              I2CSendByte(psRTC->hour|0x80);          //hour ,同时设置小时寄存器最高位（0：为12小时制，1：�
+             -��24小时制）
+ 276   1              I2CWaitAck();   
+ 277   1              I2CSendByte(psRTC->week);               //week      
+ 278   1              I2CWaitAck();   
+ 279   1              I2CSendByte(psRTC->day);                //day      
+ 280   1              I2CWaitAck();   
+ 281   1              I2CSendByte(psRTC->month);              //month      
+ 282   1              I2CWaitAck();   
+ 283   1              I2CSendByte(psRTC->year);               //year      
+ 284   1              I2CWaitAck();   
+ 285   1              I2CStop();
+ 286   1              
+ 287   1              WriteRTC_Disable();                             //使能，关锁
+ 288   1              return  TRUE;
+ 289   1      }
+ 290          
+ 291          
+ 292          /******设置RTC报警中断演示程序演示******/
+ 293          void WriteALARM(void)                           //设置报警时间：2016年2月14日 8：00
+ 294          {                                               
+ 295   1              WriteRTC_Enable();
+ 296   1              I2CWriteOneByte(Alarm_HR,0x08); //8时
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 6   
+
+ 297   1              I2CWriteOneByte(Alarm_DY,0x14); //14日
+ 298   1              I2CWriteOneByte(Alarm_MO,0x02); //02月
+ 299   1              I2CWriteOneByte(Alarm_YR,0x16); //16年
+ 300   1              I2CWriteOneByte(Alarm_EN,0x74); //设置报警允许（使能年、月、日、小时报警）
+ 301   1              I2CWriteOneByte(CTR2,0x92);     //设置INT中断选通（INTS1，INTS0），及报警中断总允许位（IN
+             -TAE）
+ 302   1              WriteRTC_Disable();
+ 303   1      }
+ 304          
+ 305          /******设置RTC倒计时中断演示******/
+ 306          void SetDjs(void)                                                       //设置倒计时中断
+ 307          {
+ 308   1              WriteRTC_Enable();
+ 309   1              I2CWriteOneByte(CTR2,0xF0);//先清倒计时中断总允许位（INTDE）
+ 310   1              I2CWriteOneByte(CTR2,0xF4);//设置周期性中断（IM=1）INT中断选通（INTS1，INTS0），配置�
+             -�计时中断总允许位（INTDE）
+ 311   1              I2CWriteOneByte(CTR3,0x20);//选择定时器频率源（TDS1、TDS0）为1HZ
+ 312   1              I2CWriteOneByte(Timer_Counter1,5);//倒计时初值寄存器，设置8位倒计时计数初值（5s）
+ 313   1              I2CWriteOneByte(Timer_Counter2,0);
+ 314   1              I2CWriteOneByte(Timer_Counter3,0);
+ 315   1              WriteRTC_Disable();
+ 316   1      }
+ 317          
+ 318          /******设置RTC频率中断演示******/
+ 319          void SetFrq_2Hz(void)                                   
+ 320          {
+ 321   1              WriteRTC_Enable();
+ 322   1              I2CWriteOneByte(CTR2,0xA1);     //选通频率中断（INTS1，INTS0），设置频率中断总允许位（IN
+             -TFE）
+ 323   1              I2CWriteOneByte(CTR3,0x09);     //设置2Hz频率中断
+ 324   1              WriteRTC_Disable();
+ 325   1      }
+ 326          /******禁止RTC中断******/
+ 327          void ClrINT(void)         
+ 328          {
+ 329   1              WriteRTC_Enable();
+ 330   1              I2CWriteOneByte(CTR2,0x80);
+ 331   1              WriteRTC_Disable();
+ 332   1      }
+ 333          /************RTC连续读多个字节************/
+ 334          u8 I2CReadSerial(u8 Address, u8 length,u8 *ps)
+ 335          {
+ 336   1              u8      i;
+ 337   1              I2CStart();
+ 338   1              I2CSendByte(RTC_Address);      
+ 339   1              if(!I2CWaitAck()){I2CStop(); return FALSE;}
+ 340   1              I2CSendByte(Address);                   //设置要读的地址
+ 341   1              I2CWaitAck();
+ 342   1              I2CStart();     
+ 343   1              I2CSendByte(RTC_Address+1);
+ 344   1              I2CWaitAck();
+ 345   1              for(i = 0;i<length-1;i++,ps++)
+ 346   1              {
+ 347   2                      *ps = I2CReceiveByte();         //读数据
+ 348   2                      I2CAck();
+ 349   2              }
+ 350   1              *ps = I2CReceiveByte(); 
+ 351   1              I2CNoAck();
+ 352   1              I2CStop(); 
+ 353   1              return  TRUE;
+ 354   1      }
+ 355          
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 7   
+
+ 356          //******************RTC连续写多个字节******************|
+ 357          u8 RTCWriteSerial(u8 Address, u8 length,u8 *ps)
+ 358          {
+ 359   1              u8      i;
+ 360   1              WriteRTC_Enable();
+ 361   1              
+ 362   1              I2CStart();
+ 363   1              I2CSendByte(RTC_Address);       //器件地址
+ 364   1              if(!I2CWaitAck()){I2CStop(); return FALSE;}
+ 365   1              I2CSendByte(Address);                   //设置起始地址
+ 366   1              I2CWaitAck();
+ 367   1              for(i = 0;i<length;i++)
+ 368   1              {       
+ 369   2                      I2CSendByte(*(ps++));           
+ 370   2                      I2CAck();                       
+ 371   2              }
+ 372   1              I2CStop(); 
+ 373   1              
+ 374   1              WriteRTC_Disable();
+ 375   1              return  TRUE;
+ 376   1      }
+ 377          #if TEST_MODE
+ 378          //////*****主程序演示*****//////
+ 379          void rtcDisplay_Test(void)
+ 380          {
+ 381   1              u16             Bat;
+ 382   1              u8      Batbit8, Batbit0_7;
+ 383   1              
+ 384   1              I2CWriteDate(&RTC);     //设置时间演示，16年1月26日......
+ 385   1      //      WriteALARM();           //设置报警中断时间演示
+ 386   1      //      SetDjs();                       //设置倒计时中断演示
+ 387   1              SetFrq_2Hz();                   //设置频率中断（从INT脚输出方波）演示
+ 388   1              
+ 389   1              I2CReadSerial(IDcode,8,&Sram);          //读内部8字节ID号演示
+ 390   1              RTCWriteSerial(UserRam_30H,8,&Sram);            //把内部8字节的ID号写入用户通用存储器的0x30-0x37�
+             -�址演示
+ 391   1              
+ 392   1              WriteRTC_Enable();      
+ 393   1      #if EN_CHARGE           
+                      I2CWriteOneByte(CHARGE_MG,0x82);//外接充电电池的使能充电功能
+              #else
+ 396   1              I2CWriteOneByte(CHARGE_MG,0);//外接一次性电池的禁止充电功能，避免损坏电池
+ 397   1      #endif  
+ 398   1              WriteRTC_Disable();
+ 399   1              
+ 400   1              //while(1)
+ 401   1              {
+ 402   2                      I2CReadDate(&RTC);              //读时间演示
+ 403   2      
+ 404   2                      Batbit8 = I2CReadOneByte(Bat_bit8);             //读SD25XX的电池电量最高位
+ 405   2                      Batbit0_7 = I2CReadOneByte(Bat_Low8);           //读SD25XX的电池电量低八位
+ 406   2                      Bat = (Batbit8>>7)*255+Batbit0_7;                               //计算电池电量值演示。如Bat=285则表示2.85V
+ 407   2      
+ 408   2                      //把时间数据从串口打出来显示
+ 409   2              LOGD("[Time] %01bd%01bd/%01bd%01bd/%01bd%01bd [Week]%01bd %01bd%01bd:%01bd%01bd:%01bd%01bd [BatVol
+             -t] %bdmV\r\n",
+ 410   2                  (RTC.year >> 4),(RTC.year & 0x0f),
+ 411   2                  (RTC.month >> 4),(RTC.month & 0x0f),
+ 412   2                  (RTC.day >> 4),(RTC.day & 0x0f),
+ 413   2                  (RTC.week),
+ 414   2                  (RTC.hour >> 4),(RTC.hour & 0x0f),
+ 415   2                  (RTC.minute >> 4),(RTC.minute & 0x0f),
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 8   
+
+ 416   2                  (RTC.second >> 4),(RTC.second & 0x0f),
+ 417   2                  Bat);
+ 418   2              }
+ 419   1      
+ 420   1      }
+ 421          #endif
+ 422          //特别提醒：当写实时时间数据时 (00H~06H), 不可以单独 对 7 个时间数据中的某一�
+             -��进行写操作 ,
+ 423          //否则可能会引起时间数据的错误进位 , 所以要修改其中某一个数据 , 应一次性�
+             -�入全部 7 个实时时钟数据 .
+ 424          /*********************************************END OF FILE**********************/
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 9   
+
+ASSEMBLY LISTING OF GENERATED OBJECT CODE
+
+
+             ; FUNCTION L?0052 (BEGIN)
+0000         L?0053:
+0000 C283              CLR     MSR_SD3178_SCK
+0002         L?0054:
+0002 120000      R     LCALL   I2CWait
+0005 D283              SETB    MSR_SD3178_SCK
+             ; FUNCTION I2CWait (BEGIN)
+                                           ; SOURCE LINE # 68
+                                           ; SOURCE LINE # 69
+                                           ; SOURCE LINE # 72
+0007 00                NOP     
+                                           ; SOURCE LINE # 73
+0008 00                NOP     
+                                           ; SOURCE LINE # 74
+;---- Variable 'i' assigned to Register 'R7' ----
+0009 7F13              MOV     R7,#013H
+000B         ?C0001:
+                                           ; SOURCE LINE # 75
+000B DFFE              DJNZ    R7,?C0001
+000D         ?C0002:
+                                           ; SOURCE LINE # 76
+000D         ?C0003:
+000D 22                RET     
+             ; FUNCTION I2CWait (END)
+
+             ; FUNCTION L?0060 (BEGIN)
+0000 AF04              MOV     R7,AR4
+0002 120000      R     LCALL   _I2CSendByte
+0005 120000      R     LCALL   I2CWaitAck
+             ; FUNCTION I2CStart (BEGIN)
+                                           ; SOURCE LINE # 79
+                                           ; SOURCE LINE # 80
+                                           ; SOURCE LINE # 81
+0008 D284              SETB    MSR_SD3178_SDA
+                                           ; SOURCE LINE # 82
+                                           ; SOURCE LINE # 83
+                                           ; SOURCE LINE # 84
+000A 120000      R     LCALL   L?0054
+                                           ; SOURCE LINE # 86
+000D 208402            JB      MSR_SD3178_SDA,?C0004
+0010 C3                CLR     C
+0011 22                RET     
+0012         ?C0004:
+                                           ; SOURCE LINE # 88
+0012 C284              CLR     MSR_SD3178_SDA
+                                           ; SOURCE LINE # 89
+0014 120000      R     LCALL   I2CWait
+                                           ; SOURCE LINE # 90
+0017 C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 91
+0019 120000      R     LCALL   I2CWait
+                                           ; SOURCE LINE # 92
+001C D3                SETB    C
+                                           ; SOURCE LINE # 93
+001D         ?C0005:
+001D 22                RET     
+             ; FUNCTION I2CStart (END)
+
+             ; FUNCTION L?0062 (BEGIN)
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 10  
+
+0000 120000      R     LCALL   I2CNoAck
+             ; FUNCTION I2CStop (BEGIN)
+                                           ; SOURCE LINE # 96
+                                           ; SOURCE LINE # 97
+                                           ; SOURCE LINE # 98
+0003 C284              CLR     MSR_SD3178_SDA
+                                           ; SOURCE LINE # 99
+0005 120000      R     LCALL   I2CWait
+                                           ; SOURCE LINE # 100
+                                           ; SOURCE LINE # 101
+                                           ; SOURCE LINE # 102
+                                           ; SOURCE LINE # 103
+0008 120000      R     LCALL   L?0052
+                                           ; SOURCE LINE # 104
+000B D284              SETB    MSR_SD3178_SDA
+                                           ; SOURCE LINE # 105
+000D 22                RET     
+             ; FUNCTION I2CStop (END)
+
+             ; FUNCTION L?0061 (BEGIN)
+0000 120000      R     LCALL   I2CReceiveByte
+0003 EF                MOV     A,R7
+0004 120000      E     LCALL   ?C?CSTPTR
+             ; FUNCTION I2CAck (BEGIN)
+                                           ; SOURCE LINE # 108
+                                           ; SOURCE LINE # 109
+                                           ; SOURCE LINE # 110
+0007 C284              CLR     MSR_SD3178_SDA
+                                           ; SOURCE LINE # 111
+                                           ; SOURCE LINE # 112
+                                           ; SOURCE LINE # 113
+                                           ; SOURCE LINE # 114
+0009 120000      R     LCALL   L?0052
+                                           ; SOURCE LINE # 115
+000C C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 116
+000E 22                RET     
+             ; FUNCTION I2CAck (END)
+
+             ; FUNCTION I2CNoAck (BEGIN)
+                                           ; SOURCE LINE # 119
+                                           ; SOURCE LINE # 120
+                                           ; SOURCE LINE # 121
+0000 D284              SETB    MSR_SD3178_SDA
+                                           ; SOURCE LINE # 122
+                                           ; SOURCE LINE # 123
+                                           ; SOURCE LINE # 124
+                                           ; SOURCE LINE # 125
+0002 120000      R     LCALL   L?0053
+                                           ; SOURCE LINE # 126
+0005 C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 127
+0007 22                RET     
+             ; FUNCTION I2CNoAck (END)
+
+             ; FUNCTION L?0049 (BEGIN)
+0000 EB                MOV     A,R3
+0001 F0                MOVX    @DPTR,A
+0002 A3                INC     DPTR
+0003 EA                MOV     A,R2
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 11  
+
+0006 E9                MOV     A,R1
+0007 F0                MOVX    @DPTR,A
+0008 120000      R     LCALL   WriteRTC_Enable
+000B         L?0050:
+000B 120000      R     LCALL   I2CStart
+000E         L?0051:
+000E 7F64              MOV     R7,#064H
+0010 120000      R     LCALL   _I2CSendByte
+             ; FUNCTION I2CWaitAck (BEGIN)
+                                           ; SOURCE LINE # 130
+                                           ; SOURCE LINE # 131
+                                           ; SOURCE LINE # 132
+0013 C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 133
+0015 D284              SETB    MSR_SD3178_SDA
+                                           ; SOURCE LINE # 134
+                                           ; SOURCE LINE # 135
+                                           ; SOURCE LINE # 136
+0017 120000      R     LCALL   L?0054
+001A         ?C0009:
+                                           ; SOURCE LINE # 137
+001A 308404            JNB     MSR_SD3178_SDA,?C0010
+                                           ; SOURCE LINE # 138
+                                           ; SOURCE LINE # 139
+001D C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 140
+001F C3                CLR     C
+0020 22                RET     
+                                           ; SOURCE LINE # 141
+0021         ?C0010:
+                                           ; SOURCE LINE # 142
+0021 C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 143
+0023 D3                SETB    C
+                                           ; SOURCE LINE # 144
+0024         ?C0011:
+0024 22                RET     
+             ; FUNCTION I2CWaitAck (END)
+
+             ; FUNCTION L?0058 (BEGIN)
+0000 F9                MOV     R1,A
+0001         L?0059:
+0001 120000      E     LCALL   ?C?CLDOPTR
+0004 FF                MOV     R7,A
+             ; FUNCTION _I2CSendByte (BEGIN)
+                                           ; SOURCE LINE # 147
+;---- Variable 'demand' assigned to Register 'R6' ----
+0005 AE07              MOV     R6,AR7
+                                           ; SOURCE LINE # 148
+                                           ; SOURCE LINE # 149
+;---- Variable 'i' assigned to Register 'R5' ----
+0007 7D08              MOV     R5,#08H
+0009         ?C0012:
+                                           ; SOURCE LINE # 151
+0009 AF05              MOV     R7,AR5
+000B 1D                DEC     R5
+000C EF                MOV     A,R7
+000D 6010              JZ      ?C0013
+                                           ; SOURCE LINE # 152
+                                           ; SOURCE LINE # 153
+000F C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 154
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 12  
+
+0011 00                NOP     
+                                           ; SOURCE LINE # 155
+0012 EE                MOV     A,R6
+0013 33                RLC     A
+0014 9284              MOV     MSR_SD3178_SDA,C
+                                           ; SOURCE LINE # 156
+0016 EE                MOV     A,R6
+0017 25E0              ADD     A,ACC
+0019 FE                MOV     R6,A
+                                           ; SOURCE LINE # 157
+                                           ; SOURCE LINE # 158
+                                           ; SOURCE LINE # 159
+001A 120000      R     LCALL   L?0054
+                                           ; SOURCE LINE # 160
+001D 80EA              SJMP    ?C0012
+001F         ?C0013:
+                                           ; SOURCE LINE # 161
+001F C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 162
+0021 22                RET     
+             ; FUNCTION _I2CSendByte (END)
+
+             ; FUNCTION L?0055 (BEGIN)
+0000         L?0056:
+0000 EF                MOV     A,R7
+0001         L?0057:
+0001 120000      E     LCALL   ?C?CSTOPTR
+0004 120000      R     LCALL   I2CAck
+             ; FUNCTION I2CReceiveByte (BEGIN)
+                                           ; SOURCE LINE # 165
+                                           ; SOURCE LINE # 166
+                                           ; SOURCE LINE # 167
+;---- Variable 'i' assigned to Register 'R6' ----
+0007 7E08              MOV     R6,#08H
+                                           ; SOURCE LINE # 168
+;---- Variable 'ddata' assigned to Register 'R5' ----
+0009 E4                CLR     A
+000A FD                MOV     R5,A
+                                           ; SOURCE LINE # 169
+000B D284              SETB    MSR_SD3178_SDA
+000D         ?C0015:
+                                           ; SOURCE LINE # 170
+000D AF06              MOV     R7,AR6
+000F 1E                DEC     R6
+0010 EF                MOV     A,R7
+0011 600F              JZ      ?C0016
+                                           ; SOURCE LINE # 171
+                                           ; SOURCE LINE # 172
+0013 ED                MOV     A,R5
+0014 25E0              ADD     A,ACC
+0016 FD                MOV     R5,A
+                                           ; SOURCE LINE # 173
+                                           ; SOURCE LINE # 174
+                                           ; SOURCE LINE # 175
+                                           ; SOURCE LINE # 176
+0017 120000      R     LCALL   L?0053
+                                           ; SOURCE LINE # 177
+001A 3084F0            JNB     MSR_SD3178_SDA,?C0015
+                                           ; SOURCE LINE # 178
+                                           ; SOURCE LINE # 179
+001D 4401              ORL     A,#01H
+001F FD                MOV     R5,A
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 13  
+
+                                           ; SOURCE LINE # 180
+                                           ; SOURCE LINE # 181
+0020 80EB              SJMP    ?C0015
+0022         ?C0016:
+                                           ; SOURCE LINE # 182
+0022 C283              CLR     MSR_SD3178_SCK
+                                           ; SOURCE LINE # 183
+0024 AF05              MOV     R7,AR5
+                                           ; SOURCE LINE # 184
+0026         ?C0018:
+0026 22                RET     
+             ; FUNCTION I2CReceiveByte (END)
+
+             ; FUNCTION _I2CWriteOneByte (BEGIN)
+                                           ; SOURCE LINE # 187
+;---- Variable 'date' assigned to Register 'R4' ----
+0000 AC05              MOV     R4,AR5
+;---- Variable 'add' assigned to Register 'R3' ----
+0002 AB07              MOV     R3,AR7
+                                           ; SOURCE LINE # 188
+                                           ; SOURCE LINE # 189
+0004 120000      R     LCALL   I2CStart
+0007 4001              JC      ?C0019
+0009 22                RET     
+000A         ?C0019:
+                                           ; SOURCE LINE # 190
+                                           ; SOURCE LINE # 191
+000A 120000      R     LCALL   L?0051
+000D 4003              JC      ?C0021
+000F 020000      R     LJMP    I2CStop
+0012         ?C0021:
+                                           ; SOURCE LINE # 192
+0012 AF03              MOV     R7,AR3
+0014 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 193
+0017 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 194
+001A AF04              MOV     R7,AR4
+001C 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 195
+001F 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 196
+0022 120000      R     LCALL   I2CStop
+                                           ; SOURCE LINE # 197
+0025 D3                SETB    C
+                                           ; SOURCE LINE # 198
+0026         ?C0020:
+0026 22                RET     
+             ; FUNCTION _I2CWriteOneByte (END)
+
+             ; FUNCTION _I2CReadOneByte (BEGIN)
+                                           ; SOURCE LINE # 201
+;---- Variable 'add' assigned to Register 'R4' ----
+0000 AC07              MOV     R4,AR7
+                                           ; SOURCE LINE # 202
+                                           ; SOURCE LINE # 204
+0002 120000      R     LCALL   I2CStart
+0005 4003              JC      ?C0022
+0007 7F00              MOV     R7,#00H
+0009 22                RET     
+000A         ?C0022:
+                                           ; SOURCE LINE # 205
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 14  
+
+                                           ; SOURCE LINE # 206
+000A 120000      R     LCALL   L?0051
+000D 4006              JC      ?C0024
+000F 120000      R     LCALL   I2CStop
+0012 7F00              MOV     R7,#00H
+0014 22                RET     
+0015         ?C0024:
+                                           ; SOURCE LINE # 207
+                                           ; SOURCE LINE # 208
+                                           ; SOURCE LINE # 209
+0015 120000      R     LCALL   L?0060
+                                           ; SOURCE LINE # 210
+0018 7F65              MOV     R7,#065H
+001A 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 211
+001D 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 212
+0020 120000      R     LCALL   I2CReceiveByte
+;---- Variable 'dat' assigned to Register 'R6' ----
+0023 AE07              MOV     R6,AR7
+                                           ; SOURCE LINE # 213
+                                           ; SOURCE LINE # 214
+0025 120000      R     LCALL   L?0062
+                                           ; SOURCE LINE # 215
+0028 AF06              MOV     R7,AR6
+                                           ; SOURCE LINE # 216
+002A         ?C0023:
+002A 22                RET     
+             ; FUNCTION _I2CReadOneByte (END)
+
+             ; FUNCTION WriteRTC_Enable (BEGIN)
+                                           ; SOURCE LINE # 219
+                                           ; SOURCE LINE # 220
+                                           ; SOURCE LINE # 221
+0000 7D80              MOV     R5,#080H
+0002 7F10              MOV     R7,#010H
+0004 120000      R     LCALL   _I2CWriteOneByte
+0007 4001              JC      ?C0025
+0009 22                RET     
+000A         ?C0025:
+                                           ; SOURCE LINE # 222
+000A 7D84              MOV     R5,#084H
+000C 7F0F              MOV     R7,#0FH
+000E 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 223
+0011 D3                SETB    C
+                                           ; SOURCE LINE # 224
+0012         ?C0026:
+0012 22                RET     
+             ; FUNCTION WriteRTC_Enable (END)
+
+             ; FUNCTION WriteRTC_Disable (BEGIN)
+                                           ; SOURCE LINE # 227
+                                           ; SOURCE LINE # 228
+                                           ; SOURCE LINE # 229
+0000 E4                CLR     A
+0001 FD                MOV     R5,A
+0002 7F0F              MOV     R7,#0FH
+0004 120000      R     LCALL   _I2CWriteOneByte
+0007 4001              JC      ?C0027
+0009 22                RET     
+000A         ?C0027:
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 15  
+
+                                           ; SOURCE LINE # 230
+000A E4                CLR     A
+000B FD                MOV     R5,A
+000C 7F10              MOV     R7,#010H
+000E 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 231
+0011 D3                SETB    C
+                                           ; SOURCE LINE # 232
+0012         ?C0028:
+0012 22                RET     
+             ; FUNCTION WriteRTC_Disable (END)
+
+             ; FUNCTION _I2CReadDate (BEGIN)
+                                           ; SOURCE LINE # 235
+;---- Variable 'psRTC' assigned to Register 'R1/R2/R3' ----
+                                           ; SOURCE LINE # 236
+                                           ; SOURCE LINE # 238
+0000 120000      R     LCALL   I2CStart
+0003 4001              JC      ?C0029
+0005 22                RET     
+0006         ?C0029:
+                                           ; SOURCE LINE # 239
+0006 7F65              MOV     R7,#065H
+0008 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 240
+000B 120000      R     LCALL   I2CWaitAck
+000E 4003              JC      ?C0031
+0010 020000      R     LJMP    I2CStop
+0013         ?C0031:
+                                           ; SOURCE LINE # 241
+                                           ; SOURCE LINE # 242
+0013 120000      R     LCALL   L?0061
+                                           ; SOURCE LINE # 243
+0016 120000      R     LCALL   I2CReceiveByte
+0019 900001            MOV     DPTR,#01H
+                                           ; SOURCE LINE # 244
+                                           ; SOURCE LINE # 245
+001C 120000      R     LCALL   L?0055
+001F EF                MOV     A,R7
+0020 543F              ANL     A,#03FH
+0022 900002            MOV     DPTR,#02H
+                                           ; SOURCE LINE # 246
+                                           ; SOURCE LINE # 247
+0025 120000      R     LCALL   L?0057
+0028 900003            MOV     DPTR,#03H
+                                           ; SOURCE LINE # 248
+                                           ; SOURCE LINE # 249
+002B 120000      R     LCALL   L?0055
+002E 900004            MOV     DPTR,#04H
+                                           ; SOURCE LINE # 250
+                                           ; SOURCE LINE # 251
+0031 120000      R     LCALL   L?0056
+0034 900005            MOV     DPTR,#05H
+                                           ; SOURCE LINE # 252
+                                           ; SOURCE LINE # 253
+0037 120000      R     LCALL   L?0056
+003A 900006            MOV     DPTR,#06H
+003D EF                MOV     A,R7
+003E 120000      E     LCALL   ?C?CSTOPTR
+                                           ; SOURCE LINE # 254
+                                           ; SOURCE LINE # 255
+0041 120000      R     LCALL   L?0062
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 16  
+
+                                           ; SOURCE LINE # 256
+0044 D3                SETB    C
+                                           ; SOURCE LINE # 257
+0045         ?C0030:
+0045 22                RET     
+             ; FUNCTION _I2CReadDate (END)
+
+             ; FUNCTION _I2CWriteDate (BEGIN)
+                                           ; SOURCE LINE # 260
+0000 900000      R     MOV     DPTR,#psRTC
+                                           ; SOURCE LINE # 261
+                                           ; SOURCE LINE # 264
+                                           ; SOURCE LINE # 266
+                                           ; SOURCE LINE # 267
+                                           ; SOURCE LINE # 268
+0003 120000      R     LCALL   L?0049
+0006 4003              JC      ?C0032
+0008 020000      R     LJMP    I2CStop
+000B         ?C0032:
+                                           ; SOURCE LINE # 269
+000B E4                CLR     A
+000C FF                MOV     R7,A
+000D 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 270
+0010 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 271
+0013 900000      R     MOV     DPTR,#psRTC
+0016 E0                MOVX    A,@DPTR
+0017 FB                MOV     R3,A
+0018 A3                INC     DPTR
+0019 E0                MOVX    A,@DPTR
+001A FA                MOV     R2,A
+001B A3                INC     DPTR
+001C E0                MOVX    A,@DPTR
+001D F9                MOV     R1,A
+001E 120000      E     LCALL   ?C?CLDPTR
+0021 FF                MOV     R7,A
+0022 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 272
+0025 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 273
+0028 900000      R     MOV     DPTR,#psRTC
+002B E0                MOVX    A,@DPTR
+002C FB                MOV     R3,A
+002D A3                INC     DPTR
+002E E0                MOVX    A,@DPTR
+002F FA                MOV     R2,A
+0030 A3                INC     DPTR
+0031 E0                MOVX    A,@DPTR
+0032 900001            MOV     DPTR,#01H
+0035 120000      R     LCALL   L?0058
+                                           ; SOURCE LINE # 274
+0038 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 275
+003B 900000      R     MOV     DPTR,#psRTC
+003E E0                MOVX    A,@DPTR
+003F FB                MOV     R3,A
+0040 A3                INC     DPTR
+0041 E0                MOVX    A,@DPTR
+0042 FA                MOV     R2,A
+0043 A3                INC     DPTR
+0044 E0                MOVX    A,@DPTR
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 17  
+
+0045 F9                MOV     R1,A
+0046 900002            MOV     DPTR,#02H
+0049 120000      E     LCALL   ?C?CLDOPTR
+004C 4480              ORL     A,#080H
+004E FF                MOV     R7,A
+004F 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 276
+0052 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 277
+0055 900000      R     MOV     DPTR,#psRTC
+0058 E0                MOVX    A,@DPTR
+0059 FB                MOV     R3,A
+005A A3                INC     DPTR
+005B E0                MOVX    A,@DPTR
+005C FA                MOV     R2,A
+005D A3                INC     DPTR
+005E E0                MOVX    A,@DPTR
+005F 900003            MOV     DPTR,#03H
+0062 120000      R     LCALL   L?0058
+                                           ; SOURCE LINE # 278
+0065 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 279
+0068 900000      R     MOV     DPTR,#psRTC
+006B E0                MOVX    A,@DPTR
+006C FB                MOV     R3,A
+006D A3                INC     DPTR
+006E E0                MOVX    A,@DPTR
+006F FA                MOV     R2,A
+0070 A3                INC     DPTR
+0071 E0                MOVX    A,@DPTR
+0072 F9                MOV     R1,A
+0073 900004            MOV     DPTR,#04H
+0076 120000      R     LCALL   L?0059
+                                           ; SOURCE LINE # 280
+0079 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 281
+007C 900000      R     MOV     DPTR,#psRTC
+007F E0                MOVX    A,@DPTR
+0080 FB                MOV     R3,A
+0081 A3                INC     DPTR
+0082 E0                MOVX    A,@DPTR
+0083 FA                MOV     R2,A
+0084 A3                INC     DPTR
+0085 E0                MOVX    A,@DPTR
+0086 F9                MOV     R1,A
+0087 900005            MOV     DPTR,#05H
+008A 120000      R     LCALL   L?0059
+                                           ; SOURCE LINE # 282
+008D 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 283
+0090 900000      R     MOV     DPTR,#psRTC
+0093 E0                MOVX    A,@DPTR
+0094 FB                MOV     R3,A
+0095 A3                INC     DPTR
+0096 E0                MOVX    A,@DPTR
+0097 FA                MOV     R2,A
+0098 A3                INC     DPTR
+0099 E0                MOVX    A,@DPTR
+009A F9                MOV     R1,A
+009B 900006            MOV     DPTR,#06H
+009E 120000      R     LCALL   L?0059
+                                           ; SOURCE LINE # 284
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 18  
+
+00A1 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 285
+00A4 120000      R     LCALL   I2CStop
+                                           ; SOURCE LINE # 287
+00A7 120000      R     LCALL   WriteRTC_Disable
+                                           ; SOURCE LINE # 288
+00AA D3                SETB    C
+                                           ; SOURCE LINE # 289
+00AB         ?C0033:
+00AB 22                RET     
+             ; FUNCTION _I2CWriteDate (END)
+
+             ; FUNCTION WriteALARM (BEGIN)
+                                           ; SOURCE LINE # 293
+                                           ; SOURCE LINE # 294
+                                           ; SOURCE LINE # 295
+0000 120000      R     LCALL   WriteRTC_Enable
+                                           ; SOURCE LINE # 296
+0003 7D08              MOV     R5,#08H
+0005 7F09              MOV     R7,#09H
+0007 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 297
+000A 7D14              MOV     R5,#014H
+000C 7F0B              MOV     R7,#0BH
+000E 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 298
+0011 7D02              MOV     R5,#02H
+0013 7F0C              MOV     R7,#0CH
+0015 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 299
+0018 7D16              MOV     R5,#016H
+001A 7F0D              MOV     R7,#0DH
+001C 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 300
+001F 7D74              MOV     R5,#074H
+0021 7F0E              MOV     R7,#0EH
+0023 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 301
+0026 7D92              MOV     R5,#092H
+0028 7F10              MOV     R7,#010H
+002A 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 302
+002D 020000      R     LJMP    WriteRTC_Disable
+             ; FUNCTION WriteALARM (END)
+
+             ; FUNCTION SetDjs (BEGIN)
+                                           ; SOURCE LINE # 306
+                                           ; SOURCE LINE # 307
+                                           ; SOURCE LINE # 308
+0000 120000      R     LCALL   WriteRTC_Enable
+                                           ; SOURCE LINE # 309
+0003 7DF0              MOV     R5,#0F0H
+0005 7F10              MOV     R7,#010H
+0007 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 310
+000A 7DF4              MOV     R5,#0F4H
+000C 7F10              MOV     R7,#010H
+000E 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 311
+0011 7D20              MOV     R5,#020H
+0013 7F11              MOV     R7,#011H
+0015 120000      R     LCALL   _I2CWriteOneByte
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 19  
+
+                                           ; SOURCE LINE # 312
+0018 7D05              MOV     R5,#05H
+001A 7F13              MOV     R7,#013H
+001C 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 313
+001F E4                CLR     A
+0020 FD                MOV     R5,A
+0021 7F14              MOV     R7,#014H
+0023 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 314
+0026 E4                CLR     A
+0027 FD                MOV     R5,A
+0028 7F15              MOV     R7,#015H
+002A 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 315
+002D 020000      R     LJMP    WriteRTC_Disable
+             ; FUNCTION SetDjs (END)
+
+             ; FUNCTION SetFrq_2Hz (BEGIN)
+                                           ; SOURCE LINE # 319
+                                           ; SOURCE LINE # 320
+                                           ; SOURCE LINE # 321
+0000 120000      R     LCALL   WriteRTC_Enable
+                                           ; SOURCE LINE # 322
+0003 7DA1              MOV     R5,#0A1H
+0005 7F10              MOV     R7,#010H
+0007 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 323
+000A 7D09              MOV     R5,#09H
+000C 7F11              MOV     R7,#011H
+000E 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 324
+0011 020000      R     LJMP    WriteRTC_Disable
+             ; FUNCTION SetFrq_2Hz (END)
+
+             ; FUNCTION ClrINT (BEGIN)
+                                           ; SOURCE LINE # 327
+                                           ; SOURCE LINE # 328
+                                           ; SOURCE LINE # 329
+0000 120000      R     LCALL   WriteRTC_Enable
+                                           ; SOURCE LINE # 330
+0003 7D80              MOV     R5,#080H
+0005 7F10              MOV     R7,#010H
+0007 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 331
+000A 020000      R     LJMP    WriteRTC_Disable
+             ; FUNCTION ClrINT (END)
+
+             ; FUNCTION _I2CReadSerial (BEGIN)
+                                           ; SOURCE LINE # 334
+0000 900000      R     MOV     DPTR,#length
+0003 ED                MOV     A,R5
+0004 F0                MOVX    @DPTR,A
+;---- Variable 'Address' assigned to Register 'R4' ----
+0005 AC07              MOV     R4,AR7
+;---- Variable 'ps' assigned to Register 'R1/R2/R3' ----
+                                           ; SOURCE LINE # 335
+                                           ; SOURCE LINE # 337
+                                           ; SOURCE LINE # 338
+                                           ; SOURCE LINE # 339
+0007 120000      R     LCALL   L?0050
+000A 4006              JC      ?C0038
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 20  
+
+000C 120000      R     LCALL   I2CStop
+000F 7F00              MOV     R7,#00H
+0011 22                RET     
+0012         ?C0038:
+                                           ; SOURCE LINE # 340
+                                           ; SOURCE LINE # 341
+                                           ; SOURCE LINE # 342
+0012 120000      R     LCALL   L?0060
+                                           ; SOURCE LINE # 343
+0015 7F65              MOV     R7,#065H
+0017 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 344
+001A 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 345
+;---- Variable 'i' assigned to Register 'R4' ----
+001D E4                CLR     A
+001E FC                MOV     R4,A
+001F         ?C0040:
+001F 900000      R     MOV     DPTR,#length
+0022 E0                MOVX    A,@DPTR
+0023 14                DEC     A
+0024 FF                MOV     R7,A
+0025 EC                MOV     A,R4
+0026 C3                CLR     C
+0027 9F                SUBB    A,R7
+0028 500D              JNC     ?C0041
+                                           ; SOURCE LINE # 346
+                                           ; SOURCE LINE # 347
+                                           ; SOURCE LINE # 348
+002A 120000      R     LCALL   L?0061
+                                           ; SOURCE LINE # 349
+002D 0C                INC     R4
+002E 7401              MOV     A,#01H
+0030 29                ADD     A,R1
+0031 F9                MOV     R1,A
+0032 E4                CLR     A
+0033 3A                ADDC    A,R2
+0034 FA                MOV     R2,A
+0035 80E8              SJMP    ?C0040
+0037         ?C0041:
+                                           ; SOURCE LINE # 350
+0037 120000      R     LCALL   I2CReceiveByte
+003A EF                MOV     A,R7
+003B 120000      E     LCALL   ?C?CSTPTR
+                                           ; SOURCE LINE # 351
+003E 120000      R     LCALL   I2CNoAck
+                                           ; SOURCE LINE # 352
+0041 120000      R     LCALL   I2CStop
+                                           ; SOURCE LINE # 353
+0044 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 354
+0046         ?C0039:
+0046 22                RET     
+             ; FUNCTION _I2CReadSerial (END)
+
+             ; FUNCTION _RTCWriteSerial (BEGIN)
+                                           ; SOURCE LINE # 357
+0000 900000      R     MOV     DPTR,#Address
+0003 EF                MOV     A,R7
+0004 F0                MOVX    @DPTR,A
+0005 A3                INC     DPTR
+0006 ED                MOV     A,R5
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 21  
+
+0007 F0                MOVX    @DPTR,A
+0008 A3                INC     DPTR
+                                           ; SOURCE LINE # 358
+                                           ; SOURCE LINE # 360
+                                           ; SOURCE LINE # 362
+                                           ; SOURCE LINE # 363
+                                           ; SOURCE LINE # 364
+0009 120000      R     LCALL   L?0049
+000C 4006              JC      ?C0043
+000E 120000      R     LCALL   I2CStop
+0011 7F00              MOV     R7,#00H
+0013 22                RET     
+0014         ?C0043:
+                                           ; SOURCE LINE # 365
+0014 900000      R     MOV     DPTR,#Address
+0017 E0                MOVX    A,@DPTR
+0018 FF                MOV     R7,A
+0019 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 366
+001C 120000      R     LCALL   I2CWaitAck
+                                           ; SOURCE LINE # 367
+;---- Variable 'i' assigned to Register 'R4' ----
+001F E4                CLR     A
+0020 FC                MOV     R4,A
+0021         ?C0045:
+0021 900000      R     MOV     DPTR,#length
+0024 E0                MOVX    A,@DPTR
+0025 FF                MOV     R7,A
+0026 EC                MOV     A,R4
+0027 C3                CLR     C
+0028 9F                SUBB    A,R7
+0029 501B              JNC     ?C0046
+                                           ; SOURCE LINE # 368
+                                           ; SOURCE LINE # 369
+002B A3                INC     DPTR
+002C E0                MOVX    A,@DPTR
+002D FB                MOV     R3,A
+002E A3                INC     DPTR
+002F E4                CLR     A
+0030 75F001            MOV     B,#01H
+0033 120000      E     LCALL   ?C?ILDIX
+0036 A9F0              MOV     R1,B
+0038 FA                MOV     R2,A
+0039 120000      E     LCALL   ?C?CLDPTR
+003C FF                MOV     R7,A
+003D 120000      R     LCALL   _I2CSendByte
+                                           ; SOURCE LINE # 370
+0040 120000      R     LCALL   I2CAck
+                                           ; SOURCE LINE # 371
+0043 0C                INC     R4
+0044 80DB              SJMP    ?C0045
+0046         ?C0046:
+                                           ; SOURCE LINE # 372
+0046 120000      R     LCALL   I2CStop
+                                           ; SOURCE LINE # 374
+0049 120000      R     LCALL   WriteRTC_Disable
+                                           ; SOURCE LINE # 375
+004C 7F01              MOV     R7,#01H
+                                           ; SOURCE LINE # 376
+004E         ?C0044:
+004E 22                RET     
+             ; FUNCTION _RTCWriteSerial (END)
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 22  
+
+
+             ; FUNCTION rtcDisplay_Test (BEGIN)
+                                           ; SOURCE LINE # 379
+                                           ; SOURCE LINE # 380
+                                           ; SOURCE LINE # 384
+0000 7B01              MOV     R3,#01H
+0002 7A00        R     MOV     R2,#HIGH RTC
+0004 7900        R     MOV     R1,#LOW RTC
+0006 120000      R     LCALL   _I2CWriteDate
+                                           ; SOURCE LINE # 387
+0009 120000      R     LCALL   SetFrq_2Hz
+                                           ; SOURCE LINE # 389
+000C 7B01              MOV     R3,#01H
+000E 7A00        R     MOV     R2,#HIGH Sram
+0010 7900        R     MOV     R1,#LOW Sram
+0012 7D08              MOV     R5,#08H
+0014 7F72              MOV     R7,#072H
+0016 120000      R     LCALL   _I2CReadSerial
+                                           ; SOURCE LINE # 390
+0019 7A00        R     MOV     R2,#HIGH Sram
+001B 7900        R     MOV     R1,#LOW Sram
+001D 7D08              MOV     R5,#08H
+001F 7F30              MOV     R7,#030H
+0021 120000      R     LCALL   _RTCWriteSerial
+                                           ; SOURCE LINE # 392
+0024 120000      R     LCALL   WriteRTC_Enable
+                                           ; SOURCE LINE # 396
+0027 E4                CLR     A
+0028 FD                MOV     R5,A
+0029 7F18              MOV     R7,#018H
+002B 120000      R     LCALL   _I2CWriteOneByte
+                                           ; SOURCE LINE # 398
+002E 120000      R     LCALL   WriteRTC_Disable
+                                           ; SOURCE LINE # 401
+                                           ; SOURCE LINE # 402
+0031 7B01              MOV     R3,#01H
+0033 7A00        R     MOV     R2,#HIGH RTC
+0035 7900        R     MOV     R1,#LOW RTC
+0037 120000      R     LCALL   _I2CReadDate
+                                           ; SOURCE LINE # 404
+003A 7F1A              MOV     R7,#01AH
+003C 120000      R     LCALL   _I2CReadOneByte
+;---- Variable 'Batbit8' assigned to Register 'R3' ----
+003F AB07              MOV     R3,AR7
+                                           ; SOURCE LINE # 405
+0041 7F1B              MOV     R7,#01BH
+0043 120000      R     LCALL   _I2CReadOneByte
+;---- Variable 'Batbit0_7' assigned to Register 'R5' ----
+0046 AD07              MOV     R5,AR7
+                                           ; SOURCE LINE # 406
+0048 AF03              MOV     R7,AR3
+004A EF                MOV     A,R7
+004B C4                SWAP    A
+004C 13                RRC     A
+004D 13                RRC     A
+004E 13                RRC     A
+004F 5401              ANL     A,#01H
+0051 75F0FF            MOV     B,#0FFH
+0054 A4                MUL     AB
+0055 7C00              MOV     R4,#00H
+0057 2D                ADD     A,R5
+0058 FF                MOV     R7,A
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 23  
+
+0059 EC                MOV     A,R4
+005A 35F0              ADDC    A,B
+;---- Variable 'Bat' assigned to Register 'R4/R5' ----
+005C AD07              MOV     R5,AR7
+005E FC                MOV     R4,A
+                                           ; SOURCE LINE # 409
+005F 7BFF              MOV     R3,#0FFH
+0061 7A00        R     MOV     R2,#HIGH ?SC_0
+0063 7900        R     MOV     R1,#LOW ?SC_0
+0065 900000      R     MOV     DPTR,#RTC+06H
+0068 E0                MOVX    A,@DPTR
+0069 FF                MOV     R7,A
+006A C4                SWAP    A
+006B 540F              ANL     A,#0FH
+006D 900000      E     MOV     DPTR,#?_printf?BYTE+03H
+0070 F0                MOVX    @DPTR,A
+0071 EF                MOV     A,R7
+0072 540F              ANL     A,#0FH
+0074 A3                INC     DPTR
+0075 F0                MOVX    @DPTR,A
+0076 900000      R     MOV     DPTR,#RTC+05H
+0079 E0                MOVX    A,@DPTR
+007A FF                MOV     R7,A
+007B C4                SWAP    A
+007C 540F              ANL     A,#0FH
+007E 900000      E     MOV     DPTR,#?_printf?BYTE+05H
+0081 F0                MOVX    @DPTR,A
+0082 EF                MOV     A,R7
+0083 540F              ANL     A,#0FH
+0085 A3                INC     DPTR
+0086 F0                MOVX    @DPTR,A
+0087 900000      R     MOV     DPTR,#RTC+04H
+008A E0                MOVX    A,@DPTR
+008B FF                MOV     R7,A
+008C C4                SWAP    A
+008D 540F              ANL     A,#0FH
+008F 900000      E     MOV     DPTR,#?_printf?BYTE+07H
+0092 F0                MOVX    @DPTR,A
+0093 EF                MOV     A,R7
+0094 540F              ANL     A,#0FH
+0096 A3                INC     DPTR
+0097 F0                MOVX    @DPTR,A
+0098 900000      R     MOV     DPTR,#RTC+03H
+009B E0                MOVX    A,@DPTR
+009C 900000      E     MOV     DPTR,#?_printf?BYTE+09H
+009F F0                MOVX    @DPTR,A
+00A0 900000      R     MOV     DPTR,#RTC+02H
+00A3 E0                MOVX    A,@DPTR
+00A4 FF                MOV     R7,A
+00A5 C4                SWAP    A
+00A6 540F              ANL     A,#0FH
+00A8 900000      E     MOV     DPTR,#?_printf?BYTE+0AH
+00AB F0                MOVX    @DPTR,A
+00AC EF                MOV     A,R7
+00AD 540F              ANL     A,#0FH
+00AF A3                INC     DPTR
+00B0 F0                MOVX    @DPTR,A
+00B1 900000      R     MOV     DPTR,#RTC+01H
+00B4 E0                MOVX    A,@DPTR
+00B5 FF                MOV     R7,A
+00B6 C4                SWAP    A
+00B7 540F              ANL     A,#0FH
+C51 COMPILER V9.52.0.0   SD3178                                                            02/18/2021 00:01:38 PAGE 24  
+
+00B9 900000      E     MOV     DPTR,#?_printf?BYTE+0CH
+00BC F0                MOVX    @DPTR,A
+00BD EF                MOV     A,R7
+00BE 540F              ANL     A,#0FH
+00C0 A3                INC     DPTR
+00C1 F0                MOVX    @DPTR,A
+00C2 900000      R     MOV     DPTR,#RTC
+00C5 E0                MOVX    A,@DPTR
+00C6 FF                MOV     R7,A
+00C7 C4                SWAP    A
+00C8 540F              ANL     A,#0FH
+00CA 900000      E     MOV     DPTR,#?_printf?BYTE+0EH
+00CD F0                MOVX    @DPTR,A
+00CE EF                MOV     A,R7
+00CF 540F              ANL     A,#0FH
+00D1 A3                INC     DPTR
+00D2 F0                MOVX    @DPTR,A
+00D3 AE04              MOV     R6,AR4
+00D5 AF05              MOV     R7,AR5
+00D7 A3                INC     DPTR
+00D8 EE                MOV     A,R6
+00D9 F0                MOVX    @DPTR,A
+00DA A3                INC     DPTR
+00DB EF                MOV     A,R7
+00DC F0                MOVX    @DPTR,A
+00DD 020000      E     LJMP    _printf
+             ; FUNCTION rtcDisplay_Test (END)
+
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1056    ----
+   CONSTANT SIZE    =    103    ----
+   XDATA SIZE       =     15       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

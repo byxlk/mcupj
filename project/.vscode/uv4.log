@@ -4,11 +4,16 @@ compiling fzh181.c...
 compiling hx710a.c...
 compiling led_ctrl.c...
 compiling main.c...
+..\code\main.c(381): warning C206: 'slaveDeviceAddrConfigure': missing function-prototype
 compiling max485.c...
 compiling phase_detect.c...
 compiling relay_ctrl.c...
 compiling sd3178.c...
 compiling common.c...
+..\code\common.c(140): warning C280: 'puts': unreferenced local variable
+..\code\common.c(140): warning C280: 'nSize': unreferenced local variable
+..\code\common.c(153): warning C280: 'msterFlag': unreferenced local variable
+compiling mem.c...
 compiling ADC.c...
 compiling EEPROM.c...
 compiling Exti.c...
@@ -23,7 +28,10 @@ linking...
     SEGMENT: ?PR?_GETHX710COUNT?HX710A
 
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
-    SEGMENT: ?PR?_SENDCMDDATATO485?MAX485
+    SEGMENT: ?PR?_SENDATCOMMAND?MAX485
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?GETSYSTICK?PHASE_DETECT
 
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
     SEGMENT: ?PR?RELAYCTRL_XJ1?RELAY_CTRL
@@ -83,6 +91,12 @@ linking...
     SEGMENT: ?PR?POF_BOOT_DELAY?COMMON
 
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_PRINTSAMESTRING?COMMON
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?GETSYSTEMINFO?MEM
+
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
     SEGMENT: ?PR?_ADC_INILIZE?ADC
 
 *** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
@@ -126,25 +140,25 @@ linking...
     CALLER1: ?PR?TIMER1_INT?FZH181
     CALLER2: ?C_C51STARTUP
 
-Program Size: data=95.5 xdata=382 code=14779
+Program Size: data=95.5 xdata=693 code=13383
 creating hex file from ".\Objects\smart_pjst"...
 User command #1: H:\SmartPjsystem\mcupj\tools\DelTempFile_CopyHex.bat
-20210206-123802
+20210217-185115
 请按任意键继续. . . 
 
 h:\SmartPjsystem\mcupj\project>del /f /s /q ..\release_smart_pjst_*.hex 
-删除文件 - h:\SmartPjsystem\mcupj\release_smart_pjst_20210131-205857.hex
+删除文件 - h:\SmartPjsystem\mcupj\release_smart_pjst_20210217-184934.hex
 
-h:\SmartPjsystem\mcupj\project>copy Objects\smart_pjst.hex ..\release_smart_pjst_20210206-123802.hex 
+h:\SmartPjsystem\mcupj\project>copy Objects\smart_pjst.hex ..\release_smart_pjst_20210217-185115.hex 
 已复制         1 个文件。
 
-h:\SmartPjsystem\mcupj\project>dir ..\release_smart_pjst_20210206-123802.hex 
+h:\SmartPjsystem\mcupj\project>dir ..\release_smart_pjst_20210217-185115.hex 
  驱动器 H 中的卷没有标签。
  卷的序列号是 0005-6791
 
  h:\SmartPjsystem\mcupj 的目录
 
-2021/02/06  12:38            43,104 release_smart_pjst_20210206-123802.hex
-               1 个文件         43,104 字节
-               0 个目录 43,630,886,912 可用字节
-".\Objects\smart_pjst" - 0 Error(s), 35 Warning(s).
+2021/02/17  18:51            39,389 release_smart_pjst_20210217-185115.hex
+               1 个文件         39,389 字节
+               0 个目录 43,626,348,544 可用字节
+".\Objects\smart_pjst" - 0 Error(s), 42 Warning(s).

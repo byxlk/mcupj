@@ -1,0 +1,62 @@
+C51 COMPILER V9.52.0.0   RELAY_CTRL                                                        02/18/2021 00:01:38 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE RELAY_CTRL
+OBJECT MODULE PLACED IN .\Objects\relay_ctrl.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\relay_ctrl.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJEC
+                    -TEXTEND PRINT(.\Listing\relay_ctrl.lst) OBJECT(.\Objects\relay_ctrl.obj)
+
+line level    source
+
+   1          #include "api_config.h"
+   2          
+   3          void relayCtrl_XJ1(bool flag)
+   4          {
+   5   1          if(flag) SLV_RELAY_CTRL1_XJ = 0; // relay 吸合
+   6   1          else     SLV_RELAY_CTRL1_XJ = 1;
+   7   1      }
+   8          
+   9          void relayCtrl_SS1(bool flag)
+  10          {
+  11   1          if(flag) SLV_RELAY_CTRL1_SS = 0; // relay 吸合
+  12   1          else     SLV_RELAY_CTRL1_SS = 1;
+  13   1      }
+  14          
+  15          void relayCtrl_XJ2(bool flag)
+  16          {
+  17   1          if(flag) SLV_RELAY_CTRL2_XJ = 0; // relay 吸合
+  18   1          else     SLV_RELAY_CTRL2_XJ = 1;
+  19   1      }
+  20          
+  21          void relayCtrl_SS2(bool flag)
+  22          {
+  23   1          if(flag) SLV_RELAY_CTRL2_SS = 0; // relay 吸合
+  24   1          else     SLV_RELAY_CTRL2_SS = 1;
+  25   1      }
+  26          
+  27          void MSR_relayCtrl_PWR(bool flag)
+  28          {
+  29   1          if(flag) MSR_RELY_CTRL = 0; // relay 吸合
+  30   1          else     MSR_RELY_CTRL = 1;
+  31   1      }
+  32          
+  33          void MSR_relayCtrl_WAR(bool flag)
+  34          {
+  35   1          if(flag) MSR_WARN_OUTPUT = 0; // relay 吸合
+  36   1          else     MSR_WARN_OUTPUT = 1;
+  37   1      }
+  38          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     54    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       6
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

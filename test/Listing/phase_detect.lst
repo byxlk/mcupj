@@ -1,0 +1,201 @@
+C51 COMPILER V9.52.0.0   PHASE_DETECT                                                      02/18/2021 00:01:38 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE PHASE_DETECT
+OBJECT MODULE PLACED IN .\Objects\phase_detect.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\phase_detect.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJ
+                    -ECTEXTEND PRINT(.\Listing\phase_detect.lst) OBJECT(.\Objects\phase_detect.obj)
+
+line level    source
+
+   1          #include "api_config.h"
+   2          
+   3          static u32 iSecondCounter = 0;
+   4          
+   5          #if (!PHASE_OUTPUT_MODE)
+              /* F:����  0������ ABC����Ӧ��P3.5 P3.6 P3.7 */
+              static bool phaseSeqIsRight = 0;
+              static u8 phaseSeqCheckCount = 0;
+              
+              static bool phaseALossFlag = 1;
+              static bool phaseBLossFlag = 1;
+              static bool phaseCLossFlag = 1;
+              
+              static bool phaseSeqALastFlag = 1;
+              static bool phaseSeqBLastFlag = 1;
+              static bool phaseSeqCLastFlag = 1;
+              
+              static u32 phaseALossCount = 0;
+              static u32 phaseBLossCount = 0;
+              static u32 phaseCLossCount = 0;
+              
+              static bool onlyOnce_ACPowerPhaseSequenceCheck = 1; // only exectue once
+              
+              void checkPhaseSeqALost(void)
+              {
+                  if(phaseSeqALastFlag != PWR_PHASE_PIN_A) {
+                      phaseSeqALastFlag = PWR_PHASE_PIN_A;
+                      phaseALossCount = 0;
+                      phaseALossFlag = 0;
+                  } else {
+                      // ����100ms ��ƽû�б仯��Ϊphase��ʧ
+                      if((phaseALossCount++) > 100) {
+                          phaseALossFlag = 1;
+                      }
+                  }
+              }
+              
+              void checkPhaseSeqBLost(void)
+              {
+                  if(phaseSeqBLastFlag != PWR_PHASE_PIN_B) {
+                      phaseSeqBLastFlag = PWR_PHASE_PIN_B;
+                      phaseBLossCount = 0;
+                      phaseBLossFlag = 0;
+                  } else {
+                      // ����100ms ��ƽû�б仯��Ϊphase��ʧ
+                      if((phaseBLossCount++) > 100) {
+                          phaseBLossFlag = 1;
+                      }
+                  }
+              }
+              
+              void checkPhaseSeqCLost(void)
+              {
+                  if(phaseSeqCLastFlag != PWR_PHASE_PIN_C) {
+C51 COMPILER V9.52.0.0   PHASE_DETECT                                                      02/18/2021 00:01:38 PAGE 2   
+
+                      phaseSeqCLastFlag = PWR_PHASE_PIN_C;
+                      phaseCLossCount = 0;
+                      phaseCLossFlag = 0;
+                  } else {
+                      // ����100ms ��ƽû�б仯��Ϊphase��ʧ
+                      if((phaseCLossCount++) > 100) {
+                          phaseCLossFlag = 1;
+                      }
+                  }
+              }
+              
+              u16 checkACPowerPhaseSequence(void)
+              {
+                  /* F:����  0������ ABC����Ӧ��P3.5 P3.6 P3.7 */
+                  u16 phaseSeq = 0xFABC;//0x0ACB
+              
+                  if(phaseALossFlag) phaseSeq &=  0x00FF;
+                  else { phaseSeq &=  0x00FF; phaseSeq |=  0x0AFF;}
+              
+                  if(phaseBLossFlag) phaseSeq &=  0x0F0F;
+                  else { phaseSeq &=  0x0F0F; phaseSeq |=  0x0FBF;}
+              
+                  if(phaseCLossFlag) phaseSeq &=  0x0FF0;
+                  else { phaseSeq &=  0x0FF0; phaseSeq |=  0x0FFC;}
+              
+                  if(phaseSeqIsRight) phaseSeq |= 0xF000;
+                  else {
+                      phaseSeq &=  0x0FFF;
+                      phaseSeq = (phaseSeq & 0xFF00) | ((phaseSeq & 0x000F) << 4) | ((phaseSeq & 0x00F0) >> 4);
+                  }
+               
+                  return (phaseSeq);
+              }
+              
+              #if TEST_MODE
+              void acPowerPhaseSequenceCheck_Test(void)
+              {
+                  u16 phaseSeq = checkACPowerPhaseSequence();
+                  if((phaseSeq & 0xF000) == 0) {/* ?? */
+                      LOGD("Phase Sequence is right\n");
+                  } else {
+                      LOGD("Phase Sequence is not right\n");
+                  }
+                  
+                  if((phaseSeq & 0x000F) == 0x0) {
+                      LOGD("Phase C is loss ...\n");
+                  }
+                  if((phaseSeq & 0x00F0) == 0x0) {
+                      LOGD("Phase B is loss ...\n");
+                  }
+                  if((phaseSeq & 0x0F00) == 0x0) {
+                      LOGD("Phase A is loss ...\n");
+                  }
+              }
+              #endif
+              
+              #endif
+ 112          u32 getSysTick(void)
+ 113          {
+ 114   1          return iSecondCounter;
+ 115   1      }
+ 116          
+C51 COMPILER V9.52.0.0   PHASE_DETECT                                                      02/18/2021 00:01:38 PAGE 3   
+
+ 117          /********************* Timer0中断函数************************/
+ 118          static u32 pha_tick = 0;
+ 119          #define TIMER_VALUE (65536 - (MAIN_Fosc / (12 * 50)))
+ 120          void timer0_int (void) interrupt TIMER0_VECTOR //1ms @22.1184MHz
+ 121          {
+ 122   1              // process watch dog signal
+ 123   1              WDT_CONTR &= 0x7F;
+ 124   1          WDT_CONTR |= 0x10;
+ 125   1      
+ 126   1          /* Counter */
+ 127   1          iSecondCounter++;
+ 128   1      
+ 129   1      #if PHASE_OUTPUT_MODE
+ 130   1          if(iSecondCounter % 200 == 0) {
+ 131   2              PWR_PHASE_PIN_A  = ~PWR_PHASE_PIN_A;
+ 132   2              pha_tick = iSecondCounter;
+ 133   2          }
+ 134   1          if(iSecondCounter == pha_tick + 133) {
+ 135   2              PWR_PHASE_PIN_B = ~PWR_PHASE_PIN_B;
+ 136   2          }
+ 137   1          
+ 138   1          if(iSecondCounter == pha_tick + 267) {
+ 139   2              PWR_PHASE_PIN_C = ~PWR_PHASE_PIN_C;
+ 140   2          }
+ 141   1      #else
+                  checkPhaseSeqALost();
+                  checkPhaseSeqBLost();
+                  checkPhaseSeqCLost();
+              #endif
+ 146   1      
+ 147   1          /* 减小定时器误差 */
+ 148   1              //TL0 = TIMER_VALUE % 256 - TL0;
+ 149   1              //TH0 = TIMER_VALUE / 256 - TH0;
+ 150   1      }
+ 151          
+ 152          /********************* INT3�жϺ��� *************************/
+ 153          void Ext_INT3 (void) interrupt INT3_VECTOR
+ 154          {
+ 155   1      #if (!PHASE_OUTPUT_MODE)
+                  /* Check phase sequene err */
+                  if((!phaseALossFlag) && (!phaseBLossFlag) && (!phaseCLossFlag)) {
+                      if((PWR_PHASE_PIN_B == 1) && (PWR_PHASE_PIN_A == 0)) {
+                          if((phaseSeqCheckCount++) > 10) {
+                              phaseSeqIsRight = 1;
+                          } else {
+                              phaseSeqIsRight = 0;
+                              phaseSeqCheckCount = 0;
+                          }
+                      } else {
+                          phaseSeqIsRight = 0;
+                          phaseSeqCheckCount = 0;
+                      }
+                  }
+              #endif
+ 171   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    266    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      8    ----
+   PDATA SIZE       =   ----    ----
+C51 COMPILER V9.52.0.0   PHASE_DETECT                                                      02/18/2021 00:01:38 PAGE 4   
+
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

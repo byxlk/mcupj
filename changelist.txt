@@ -1,6 +1,6 @@
 【2021/01/23】
 ################################################
-/* Command Format: AT+CMD=MADDR@SADDR#data\n Response：AT+CMD=data\n */
+/* Command Format: AT+CMD=MADDR@SADDR#data\r\n Response：AT+CMD=data\n */
 主机地址：0x5A
 广播地址：0xFF
 临时地址：0xA5
@@ -10,7 +10,7 @@
 常用命令格式：
 [查询分机异常状态] 同下指令
 [主机广播状态查询] 同下指令
-[主机广播同步时间] AT+SC=01#20210123233412\n  分机回应：AT+SC=00#OK/ERR\n /* 心跳包 1秒一次 */
+[主机广播同步时间] AT+SC=5A@01#20210123233412\r\n  分机回应：AT+SC=00#OK/ERR\n /* 心跳包 1秒一次 */
 
 [主机广播分配地址] AT+AF=FF\n  分机回应：AT+AF=00#AA\n   主机回应：AT+AF=AA#01\n 
 [主机广播同步上升] AT+UP=01\n  分机回应：AT+UP=00#OK/ERR\n

@@ -1,0 +1,92 @@
+C51 COMPILER V9.52.0.0   HX710A                                                            02/18/2021 00:01:37 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE HX710A
+OBJECT MODULE PLACED IN .\Objects\hx710a.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\hx710a.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJECTEXT
+                    -END PRINT(.\Listing\hx710a.lst) OBJECT(.\Objects\hx710a.obj)
+
+line level    source
+
+   1          #include "api_config.h"
+   2          
+   3          #define TIMEROUT_VAL  (300)
+   4          
+   5          u32 getHX710Count(u8 iNo)
+   6          {
+   7   1          u32 iCount = 0;
+   8   1          u8 i = 0;
+   9   1          u8 iCounter = 0;
+  10   1          
+  11   1          if((iNo != HX710A1) && (iNo != HX710A2))
+  12   1             return iCount;
+  13   1      
+  14   1          if(iNo == HX710A1) SLV_HX710A1_SDA = 1;
+  15   1          else SLV_HX710A2_SDA = 1;
+  16   1          
+  17   1          if(iNo == HX710A1) SLV_HX710A1_SCK = 0;
+  18   1          else SLV_HX710A2_SCK = 0;
+  19   1      
+  20   1          if(iNo == HX710A1) {
+  21   2              while(SLV_HX710A1_SDA) {
+  22   3                  delay_ms(1);
+  23   3                  if((iCounter++) > TIMEROUT_VAL) {
+  24   4                      break;
+  25   4                  }
+  26   3              }
+  27   2          } else {
+  28   2              while(SLV_HX710A2_SDA) {
+  29   3                  delay_ms(1);
+  30   3                  if((iCounter++) > TIMEROUT_VAL) {
+  31   4                      break;
+  32   4                  }
+  33   3              }
+  34   2          };
+  35   1          
+  36   1          for( i = 0; i < 24; i++) {
+  37   2              if(iNo == HX710A1) SLV_HX710A1_SCK = 1;
+  38   2              else SLV_HX710A2_SCK = 1;
+  39   2              
+  40   2              iCount = (iCount << 1);
+  41   2              
+  42   2              if(iNo == HX710A1) SLV_HX710A1_SCK = 0;
+  43   2              else SLV_HX710A2_SCK = 0;
+  44   2              
+  45   2              if(iNo == HX710A1) {if(SLV_HX710A1_SDA) iCount++;}
+  46   2              else {if(SLV_HX710A2_SDA) iCount++;}
+  47   2          }
+  48   1      
+  49   1          if(iNo == HX710A1) SLV_HX710A1_SCK = 1;
+  50   1          else SLV_HX710A2_SCK = 1;
+  51   1          
+  52   1          iCount = iCount^0x800000;
+  53   1      
+  54   1          if(iNo == HX710A1) SLV_HX710A1_SCK = 0;
+C51 COMPILER V9.52.0.0   HX710A                                                            02/18/2021 00:01:37 PAGE 2   
+
+  55   1          else SLV_HX710A2_SCK = 0;
+  56   1          
+  57   1          return (iCount);
+  58   1      }
+  59          
+  60          #if TEST_MODE
+  61          void hx710_Test(void)
+  62          {
+  63   1      
+  64   1      }
+  65          
+  66          #endif
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    307    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----       7
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

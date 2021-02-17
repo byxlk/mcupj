@@ -14,7 +14,6 @@
 /*************	本地变量声明	**************/
 static u8 sysStatuMachine = STATUSMACHINE_BOOTINIT;
 static u16 phaseSeq = 0x0;
-static u32 iSecondCounter = 0;
 static bool bMSR_PowerKeyLock = 1; /* if power key is lock,can't do power up */
 
 
@@ -227,11 +226,6 @@ static void SLV_External_Interrupt_Config(void)
 	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
-u32 getSysTick(void)
-{
-    return iSecondCounter;
-}
-
 #if TEST_MODE
 static void doRunning_HardwareTest(void)
 {
@@ -321,6 +315,11 @@ static void doRunning_MasterMain(void)
 
 	//watch dog init
     init_Watch_Dog();
+
+    /* Read Configure information From eeprom */
+    readInitSystemInfo();
+    updateRebootCounterInfo();
+    //SYS_INFO_S *sysinfo = readSystemInfo();
     
 	while(1) {
         /* Step0：Only for Debug */
@@ -330,8 +329,11 @@ static void doRunning_MasterMain(void)
         //}
         /* Step1: Check AC Power PhaseSequence */
         phaseSeq = checkACPowerPhaseSequence();
-
+#if DEBUG
+        if(phaseSeq != 0xFABC) {
+#else
         if(phaseSeq == 0xFABC) {
+#endif
             MSR_LedStatusCtrl(MSR_LED_LOSS_PHASE, LED_ON);
             if((curKeyBitCode->firstKeyCode == MSR_KEY_BOOT) && (bMSR_PowerKeyLock)) {
                 clrKeyStatus(MSR_KEY_ALL);
@@ -372,18 +374,15 @@ static void doRunning_MasterMain(void)
 
         /* Step3: Check is need Read Device No 判断是否需要进行报号操作 */
         /* 分机已经做过报号操作直接进入下一个状态机 */
-        //if(!checkAddrSyncStatus()) { /* 未进行报号操作或者需要重新报号 */
-        //    sysStatuMachine = STATUSMACHINE_CTRLMODE;
-            //if((getKeyCode() & MSR_KEY_CMUT) != 0){
-            //    if((getKeyCode() & MSR_KEY_SYNC) != 0) {
-            //        /* Wait recive Slave device upload device No. and address  */
-            //        MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
-            //        sysStatuMachine = STATUSMACHINE_CTRLMODE;
-            //    }
-            //} else {
-            //    continue；
-            //}
-        //}
+        if((curKeyBitCode->firstKeyCode == MSR_KEY_CMUT)
+            && (curKeyBitCode->secondKeyCode == MSR_KEY_SYNC)) {
+            if(!checkAddrSyncStatus()) { /* 未进行报号操作或者需要重新报号 */            
+                MSR_LedFlashCtrl(MSR_LED_COMMUNICAT_INDICAT);
+                //slaveDeviceAddrConfigure();
+            } else {
+                continue;
+            }
+        }
 
         /* Step4: 操作模式按键扫描检查 */
         if((curKeyBitCode->firstKeyCode == MSR_KEY_SET)
@@ -473,23 +472,4 @@ void main(void)
 
 	//if run to here, system must be reboot now from user space
     Reboot_System();
-}
-
-/********************* Timer0中断函数************************/
-#define TIMER_VALUE (65536 - (MAIN_Fosc / (12 * 50)))
-void timer0_int (void) interrupt TIMER0_VECTOR //1ms @22.1184MHz
-{
-	// process watch dog signal
-	WDT_CONTR &= 0x7F;
-    WDT_CONTR |= 0x10;
-
-    /* Counter */
-    iSecondCounter++;
-    
-    /* Control Led Status */
-    ledStatusManageService(iSecondCounter);
-    
-    /* 减小定时器误差 */
-	//TL0 = TIMER_VALUE % 256 - TL0;
-	//TH0 = TIMER_VALUE / 256 - TH0;
 }

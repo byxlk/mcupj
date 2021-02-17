@@ -1,5 +1,6 @@
 
 #include "api_config.h"
+#include "STC15Fxxxx.H"
 
 #define		IDATA_ID_START_ADDR	0xf1		//??idata?ID??????
 #define		CODE_ID_START_ADDR	(8192-7)	//??code ?ID??????
@@ -139,6 +140,8 @@ bit POF_Boot_Delay(void)
 
 static void PrintSameString(u8 *puts, u8 nSize)
 {
+    puts = puts;
+    nSize = nSize;
 #if DEBUG
 	u8 i = 0;
 	if(nSize > 0)
@@ -151,7 +154,8 @@ static void PrintSameString(u8 *puts, u8 nSize)
 }
 
 void PrintSystemInfoToSerial(bool msterFlag)
-{	
+{
+    msterFlag = msterFlag;
 #if DEBUG
 	PrintSameString("*", 62);	   
 	PrintSameString(" ", 1);

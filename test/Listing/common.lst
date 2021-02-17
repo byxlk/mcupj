@@ -1,0 +1,202 @@
+C51 COMPILER V9.52.0.0   COMMON                                                            02/18/2021 00:01:37 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE COMMON
+OBJECT MODULE PLACED IN .\Objects\common.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\common.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJECTEXT
+                    -END PRINT(.\Listing\common.lst) OBJECT(.\Objects\common.obj)
+
+line level    source
+
+   1          
+   2          #include "api_config.h"
+   3          
+   4          #define         IDATA_ID_START_ADDR     0xf1            //??idata?ID??????
+   5          #define         CODE_ID_START_ADDR      (8192-7)        //??code ?ID??????
+   6          u8      idata ID_idata[7];      //idata ??ID?
+   7          u8      idata ID_code[7];       //code  ??ID?
+   8          
+   9          static void Delay_1us(void)             //@22.1184MHz
+  10          {
+  11   1              u8 i;
+  12   1      
+  13   1              i = 3;
+  14   1              while (--i);
+  15   1      }
+  16          
+  17          static void Delay_1ms(void)             //@22.1184MHz
+  18          {
+  19   1              u8 i, j;
+  20   1      
+  21   1              _nop_();
+  22   1              _nop_();
+  23   1              i = 22;
+  24   1              j = 128;
+  25   1              do
+  26   1              {
+  27   2                      while (--j);
+  28   2              } while (--i);
+  29   1      }
+  30          
+  31          void delay_us(u32 t)
+  32          {
+  33   1          while(t--) Delay_1us();
+  34   1      }
+  35          
+  36          void delay_ms(u32 t)
+  37          {
+  38   1          while(t--) Delay_1ms();
+  39   1      }
+  40          
+  41          void delay5us(void)             //@22.1184MHz
+  42          {
+  43   1              u8 i;
+  44   1      
+  45   1              _nop_();
+  46   1              i = 25;
+  47   1              while (--i);
+  48   1      }
+  49          
+  50          void delay10us(void)            //@22.1184MHz
+  51          {
+  52   1              u8 i;
+  53   1      
+  54   1              _nop_();
+C51 COMPILER V9.52.0.0   COMMON                                                            02/18/2021 00:01:37 PAGE 2   
+
+  55   1              _nop_();
+  56   1              _nop_();
+  57   1              i = 52;
+  58   1              while (--i);
+  59   1      }
+  60          
+  61          void delay500ms(void)           //@22.1184MHz
+  62          {
+  63   1              u8 i, j, k;
+  64   1      
+  65   1              _nop_();
+  66   1              _nop_();
+  67   1              i = 43;
+  68   1              j = 6;
+  69   1              k = 203;
+  70   1              do
+  71   1              {
+  72   2                      do
+  73   2                      {
+  74   3                              while (--k);
+  75   3                      } while (--j);
+  76   2              } while (--i);
+  77   1      }
+  78          
+  79          void readCpuId()
+  80          {
+  81   1              u8      idata *ip;
+  82   1              u8      code  *cp;
+  83   1              u8      i;
+  84   1              
+  85   1              for(i=0, ip=IDATA_ID_START_ADDR; ip<(IDATA_ID_START_ADDR+7); ip++)      ID_idata[i++] = *ip;
+  86   1              for(i=0, cp=CODE_ID_START_ADDR;  cp<(CODE_ID_START_ADDR+7);  cp++)      ID_code[i++]  = *cp;
+  87   1      }
+  88          
+  89          bool isMasterDevice(void)
+  90          {
+  91   1          return MASTER_INDICATOR_FLAG;
+  92   1      }
+  93          
+  94          void Reboot_System(void)
+  95          {
+  96   1          //LOGD("Reboot System ...\n");
+  97   1              //if run to here, system must be reboot now from user space
+  98   1              if(IAP_CONTR & 0x40)
+  99   1                      IAP_CONTR &= 0x3F; // 0011 1111
+ 100   1              if(!(IAP_CONTR & 0x20))
+ 101   1                      IAP_CONTR |= 0x60; // 0010 0000
+ 102   1      }
+ 103          
+ 104          
+ 105          void init_Watch_Dog(void)
+ 106          {
+ 107   1          WDT_CONTR = 0x3A;  //0011 1010
+ 108   1              //LOGD(" Watch Dog start ... \r\n");
+ 109   1      }
+ 110          
+ 111          void System_PowerDown(void)
+ 112          {
+ 113   1          //PCON |= 2 //MCU ?? ?? ??
+ 114   1          LOGD("System entery Power Down mode ...\r\n\r\n");
+ 115   1      
+ 116   1              _nop_();
+C51 COMPILER V9.52.0.0   COMMON                                                            02/18/2021 00:01:37 PAGE 3   
+
+ 117   1          _nop_();
+ 118   1          _nop_();
+ 119   1          MCU_POWER_DOWN();
+ 120   1          _nop_();    // 
+ 121   1          _nop_();
+ 122   1          _nop_();
+ 123   1          _nop_();
+ 124   1      }
+ 125          
+ 126          bit POF_Boot_Delay(void)
+ 127          {
+ 128   1          if(PCON & 0x10) {
+ 129   2                      LOGD("Cold reset, delay 4s entery system ...\r\n");
+ 130   2              delay_ms(50)    ; //boot delay 4s
+ 131   2              PCON &= 0xEF; // Clear POF register 
+ 132   2      
+ 133   2                      return TRUE;
+ 134   2          } else {
+ 135   2                      return FALSE;
+ 136   2          }
+ 137   1      }
+ 138          
+ 139          
+ 140          static void PrintSameString(u8 *puts, u8 nSize)
+ 141          {
+ 142   1      #if DEBUG
+ 143   1              u8 i = 0;
+ 144   1              if(nSize > 0)
+ 145   1              { 
+ 146   2                      for(i = 0; i < nSize; i++) 
+ 147   2                              LOGD(puts);
+ 148   2                      LOGD("\r\n");
+ 149   2              }
+ 150   1      #endif
+ 151   1      }
+ 152          
+ 153          void PrintSystemInfoToSerial(bool msterFlag)
+ 154          {       
+ 155   1      #if DEBUG
+ 156   1              PrintSameString("*", 62);          
+ 157   1              PrintSameString(" ", 1);
+ 158   1              LOGD("  Project Name  : Smart Climb Control System\r\n");
+ 159   1              LOGD("  Version No.   : Ver 1.0\r\n");
+ 160   1              LOGD("  Designed Time : 2021-01-01\r\n");
+ 161   1              LOGD("  Auth Name     : Li Shuliang\r\n");
+ 162   1              LOGD("  Auth Email    : 313424410@qq.com\r\n");
+ 163   1              LOGD("  Project Owner : RuiLong Tech.\r\n");
+ 164   1          if(msterFlag) LOGD("  Device Type   : Master\r\n");
+ 165   1          else LOGD("  Device Type   : Slave\r\n");
+ 166   1              PrintSameString(" ", 1);
+ 167   1              LOGD("  CopyRight     : All rights reserved @2021 by RuiLong Tech. \r\n");
+ 168   1              PrintSameString(" ", 1);
+ 169   1          PrintSameString("*", 62);
+ 170   1      #endif
+ 171   1      }
+ 172          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    416    ----
+   CONSTANT SIZE    =    412    ----
+   XDATA SIZE       =   ----      13
+C51 COMPILER V9.52.0.0   COMMON                                                            02/18/2021 00:01:37 PAGE 4   
+
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =     14    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

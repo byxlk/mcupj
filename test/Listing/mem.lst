@@ -1,0 +1,55 @@
+C51 COMPILER V9.52.0.0   MEM                                                               02/18/2021 00:01:37 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE MEM
+OBJECT MODULE PLACED IN .\Objects\mem.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\mem.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJECTEXTEND
+                    - PRINT(.\Listing\mem.lst) OBJECT(.\Objects\mem.obj)
+
+line level    source
+
+   1          #include "api_config.h"
+   2          #include "EEPROM.h"
+   3          
+   4          static bool sysinfoIsInit = FALSE;
+   5          static SYS_INFO_S sysinfo;
+   6          
+   7          SYS_INFO_S *getSystemInfo(void)
+   8          {
+   9   1          return &sysinfo;
+  10   1      }
+  11          
+  12          void readInitSystemInfo(void)
+  13          {
+  14   1          //EEPROM_read_n(0x00, &sysinfo, sizeof(SYS_INFO_S));
+  15   1      }
+  16          
+  17          bool checkAddrSyncStatus(void)
+  18          {
+  19   1          if(sysinfo.slaveDeviceIsAlreadyConfigAddr != 0x0)
+  20   1              return TRUE;
+  21   1          else
+  22   1              return FALSE;
+  23   1      }
+  24          
+  25          void updateRebootCounterInfo(void)
+  26          {
+  27   1          sysinfo.reboot_counter++;
+  28   1          //EEPROM_write_n(0x00, &sysinfo, sizeof(SYS_INFO_S));
+  29   1      
+  30   1          //LOGI(“The %bd times boot up system ...\n”,)sysinfo.reboot_counter;
+  31   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     49    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    294    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

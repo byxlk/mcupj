@@ -1,5 +1,7 @@
 #include "api_config.h"
 
+static u32 iSecondCounter = 0;
+
 /* F:����  0������ ABC����Ӧ��P3.5 P3.6 P3.7 */
 static bool phaseSeqIsRight = 0;
 static u8 phaseSeqCheckCount = 0;
@@ -104,6 +106,31 @@ void acPowerPhaseSequenceCheck_Test(void)
     }
 }
 #endif
+
+u32 getSysTick(void)
+{
+    return iSecondCounter;
+}
+
+/********************* Timer0中断函数************************/
+#define TIMER_VALUE (65536 - (MAIN_Fosc / (12 * 50)))
+void timer0_int (void) interrupt TIMER0_VECTOR //1ms @22.1184MHz
+{
+	// process watch dog signal
+	WDT_CONTR &= 0x7F;
+    WDT_CONTR |= 0x10;
+
+    /* Counter */
+    iSecondCounter++;
+    
+    checkPhaseSeqALost();
+    checkPhaseSeqBLost();
+    checkPhaseSeqCLost();
+    
+    /* 减小定时器误差 */
+	//TL0 = TIMER_VALUE % 256 - TL0;
+	//TH0 = TIMER_VALUE / 256 - TH0;
+}
 
 /********************* INT3�жϺ��� *************************/
 void Ext_INT3 (void) interrupt INT3_VECTOR

@@ -1,0 +1,164 @@
+C51 COMPILER V9.52.0.0   SPI                                                               02/18/2021 00:01:39 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE SPI
+OBJECT MODULE PLACED IN .\Objects\spi.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\stclib\spi.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJEC
+                    -TEXTEND PRINT(.\Listing\spi.lst) OBJECT(.\Objects\spi.obj)
+
+line level    source
+
+   1          
+   2          /*------------------------------------------------------------------*/
+   3          /* --- STC MCU International Limited -------------------------------*/
+   4          /* --- STC 1T Series MCU RC Demo -----------------------------------*/
+   5          /* --- Mobile: (86)13922805190 -------------------------------------*/
+   6          /* --- Fax: 86-0513-55012956,55012947,55012969 ---------------------*/
+   7          /* --- Tel: 86-0513-55012928,55012929,55012966 ---------------------*/
+   8          /* --- Web: www.GXWMCU.com -----------------------------------------*/
+   9          /* --- QQ:  800003751 ----------------------------------------------*/
+  10          /* If you want to use the program or the program referenced in the  */
+  11          /* article, please specify in which data and procedures from STC    */
+  12          /*------------------------------------------------------------------*/
+  13          
+  14          
+  15          #include        "spi.h"
+  16          
+  17          u8      SPI_TxRxMode;   //
+  18          u8      SPI_TxWrite;
+  19          u8      SPI_TxRead;
+  20          u8      SPI_RxCnt;
+  21          u8      SPI_RxTimerOut;
+  22          u8      SPI_BUF_type SPI_RxBuffer[SPI_BUF_LENTH];
+  23          u8      SPI_BUF_type SPI_TxBuffer[SPI_BUF_LENTH];
+  24          bit     B_SPI_RxOk;
+  25          
+  26          
+  27          //========================================================================
+  28          // 函数: void   SPI_Init(SPI_InitTypeDef *SPIx)
+  29          // 描述: SPI初始化程序.
+  30          // 参数: SPIx: 结构参数,请参考spi.h里的定义.
+  31          // 返回: none.
+  32          // 版本: V1.0, 2012-11-22
+  33          //========================================================================
+  34          void    SPI_Init(SPI_InitTypeDef *SPIx)
+  35          {
+  36   1              if(SPIx->SPI_SSIG == ENABLE)                    SPCTL &= ~(1<<7);       //enable SS, conform Master or Slave by SS pin.
+  37   1              else                                                                    SPCTL |=  (1<<7);       //disable SS, conform Master or Slave by SPI_Mode
+  38   1              if(SPIx->SPI_Module == ENABLE)                  SPCTL |=  (1<<6);       //SPI enable
+  39   1              else                                                                    SPCTL &= ~(1<<6);       //SPI disable
+  40   1              if(SPIx->SPI_FirstBit == SPI_LSB)               SPCTL |= ~(1<<5);       //LSB first
+  41   1              else                                                                    SPCTL &= ~(1<<5);       //MSB first
+  42   1              if(SPIx->SPI_Mode == SPI_Mode_Slave)    SPCTL &= ~(1<<4);       //slave
+  43   1              else                                                                    SPCTL |=  (1<<4);       //master
+  44   1              if(SPIx->SPI_CPOL == SPI_CPOL_High)             SPCTL |=  (1<<3);       //SCLK Idle High, Low Active.
+  45   1              else                                                                    SPCTL &= ~(1<<3);       //SCLK Idle Low, High Active.
+  46   1              if(SPIx->SPI_CPHA == SPI_CPHA_2Edge)    SPCTL |=  (1<<2);       //sample at the second edge
+  47   1              else                                                                    SPCTL &= ~(1<<2);       //sample at the first  edge
+  48   1              if(SPIx->SPI_Interrupt == ENABLE)               IE2 |=  (1<<1);
+  49   1              else                                                                    IE2 &= ~(1<<1);
+  50   1              SPCTL = (SPCTL & ~3) | (SPIx->SPI_Speed & 3);                                   //set speed
+  51   1              AUXR1 = (AUXR1 & ~(3<<2)) | SPIx->SPI_IoUse;    
+  52   1      }
+  53          
+  54          //========================================================================
+C51 COMPILER V9.52.0.0   SPI                                                               02/18/2021 00:01:39 PAGE 2   
+
+  55          // 函数: void   SPI_SetMode(u8 mode)
+  56          // 描述: SPI设置主从模式函数.
+  57          // 参数: mode: 指定模式, 取值 SPI_Mode_Master 或 SPI_Mode_Slave.
+  58          // 返回: none.
+  59          // 版本: V1.0, 2012-11-22
+  60          //========================================================================
+  61          void    SPI_SetMode(u8 mode)
+  62          {
+  63   1              SPI_TxRxMode = mode;
+  64   1              if(mode == SPI_Mode_Slave)      SPCTL &= ~(1<<4);       //slave
+  65   1              else                                            SPCTL |=  (1<<4);       //master
+  66   1      }
+  67          
+  68          
+  69          //========================================================================
+  70          // 函数: void SPI_WriteToTxBuf(u8 dat)
+  71          // 描述: SPI装载发送缓冲函数.
+  72          // 参数: dat: 要发送的值.
+  73          // 返回: none.
+  74          // 版本: V1.0, 2012-11-22
+  75          //========================================================================
+  76          void    SPI_WriteToTxBuf(u8 dat)        //写入发送缓冲，指针+1
+  77          {
+  78   1              SPI_TxBuffer[SPI_TxWrite] = dat;
+  79   1              if(++SPI_TxWrite >= SPI_BUF_LENTH)      SPI_TxWrite = 0;
+  80   1      }
+  81          
+  82          //========================================================================
+  83          // 函数: void   SPI_TrigTx(void)
+  84          // 描述: SPI触发发送函数, 将SPI模式设置为发送模式并将发送缓冲的数据发出.
+  85          // 参数: dat: 要发送的值.
+  86          // 返回: none.
+  87          // 版本: V1.0, 2012-11-22
+  88          //========================================================================
+  89          void    SPI_TrigTx(void)
+  90          {
+  91   1              u8      i;
+  92   1              if(SPI_TxRead == SPI_TxWrite)   return;
+  93   1              SPI_SetMode(SPI_Mode_Master);
+  94   1              SPI_SS = 0;
+  95   1              i = SPI_TxBuffer[SPI_TxRead];
+  96   1              if(++SPI_TxRead >= SPI_BUF_LENTH)       SPI_TxRead = 0;
+  97   1              SPDAT = i;
+  98   1      }
+  99          
+ 100          
+ 101          //========================================================================
+ 102          // 函数: void SPI_Transivion (void) interrupt SPI_VECTOR
+ 103          // 描述: SPI中断函数.
+ 104          // 参数: none.
+ 105          // 返回: none.
+ 106          // 版本: V1.0, 2012-11-22
+ 107          //========================================================================
+ 108          void SPI_Transivion (void) interrupt SPI_VECTOR
+ 109          {
+ 110   1              if(SPI_TxRxMode == SPI_Mode_Slave)
+ 111   1              {
+ 112   2              //      if(!B_SPI_RxOk)
+ 113   2                      {
+ 114   3                              if(SPI_RxCnt >= SPI_BUF_LENTH)          SPI_RxCnt = 0;
+ 115   3                              SPI_RxBuffer[SPI_RxCnt++] = SPDAT;
+ 116   3                              SPI_RxTimerOut = 5;
+C51 COMPILER V9.52.0.0   SPI                                                               02/18/2021 00:01:39 PAGE 3   
+
+ 117   3                      }
+ 118   2              }
+ 119   1      
+ 120   1              if(SPI_TxRxMode == SPI_Mode_Master)
+ 121   1              {
+ 122   2                      if(SPI_TxRead != SPI_TxWrite)
+ 123   2                      {
+ 124   3                              SPDAT = SPI_TxBuffer[SPI_TxRead];
+ 125   3                              if(++SPI_TxRead >= SPI_BUF_LENTH)               SPI_TxRead = 0;
+ 126   3                      }
+ 127   2                      else
+ 128   2                      {
+ 129   3                              SPI_TxRxMode = SPI_Mode_Slave;
+ 130   3                              SPCTL &= ~(1<<4);       //slave
+ 131   3                              SPI_SS = 1;
+ 132   3                      }
+ 133   2              }
+ 134   1              SPSTAT = SPIF + WCOL;   //清0 SPIF和WCOL标志
+ 135   1      }
+ 136          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    338    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      5    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =     64    ----
+   BIT SIZE         =      1    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

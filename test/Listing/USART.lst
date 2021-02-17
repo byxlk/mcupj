@@ -1,0 +1,292 @@
+C51 COMPILER V9.52.0.0   USART                                                             02/18/2021 00:01:39 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE USART
+OBJECT MODULE PLACED IN .\Objects\USART.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\stclib\USART.C LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJ
+                    -ECTEXTEND PRINT(.\Listing\USART.lst) OBJECT(.\Objects\USART.obj)
+
+line level    source
+
+   1          
+   2          #include "USART.h"
+   3          
+   4          //stdio.h,stdarg.h??vsprintf????
+   5          #include<stdio.h>
+   6          #include<stdarg.h>
+   7          
+   8          COMx_Define     COM1,COM2;
+   9          u8 xdata TX1_Buffer[COM_TX1_Lenth];     //���ͻ���
+  10          u8 xdata RX1_Buffer[COM_RX1_Lenth];     //���ջ���
+  11          u8 xdata TX2_Buffer[COM_TX2_Lenth];     //���ͻ���
+  12          u8 xdata RX2_Buffer[COM_RX2_Lenth];     //���ջ���
+  13          
+  14          u8 USART_Configuration(u8 UARTx, COMx_InitDefine *COMx)
+  15          {
+  16   1              u8      i;
+  17   1              u32     j;
+  18   1              
+  19   1              if(UARTx == USART1)
+  20   1              {
+  21   2                      COM1.id = 1;
+  22   2                      COM1.TX_read    = 0;
+  23   2                      COM1.TX_write   = 0;
+  24   2                      COM1.B_TX_busy  = 0;
+  25   2                      COM1.RX_Cnt     = 0;
+  26   2                      COM1.RX_TimeOut = 0;
+  27   2                      COM1.B_RX_OK    = 0;
+  28   2                      for(i=0; i<COM_TX1_Lenth; i++)  TX1_Buffer[i] = 0;
+  29   2                      for(i=0; i<COM_RX1_Lenth; i++)  RX1_Buffer[i] = 0;
+  30   2      
+  31   2                      if(COMx->UART_Mode > UART_9bit_BRTx)    return 2;       //ģʽ����
+  32   2                      if(COMx->UART_Polity == PolityHigh)             PS = 1; //�����ȼ��ж�
+  33   2                      else                                                                    PS = 0; //�����ȼ��ж�
+  34   2                      SCON = (SCON & 0x3f) | COMx->UART_Mode;
+  35   2                      if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))   //�ɱ䲨����
+  36   2                      {
+  37   3                              j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;      //��1T����
+  38   3                              if(j >= 65536UL)        return 2;       //����
+  39   3                              j = 65536UL - j;
+  40   3                              if(COMx->UART_BRT_Use == BRT_Timer1)
+  41   3                              {
+  42   4                                      TR1 = 0;
+  43   4                                      AUXR &= ~0x01;          //S1 BRT Use Timer1;
+  44   4                                      TMOD &= ~(1<<6);        //Timer1 set As Timer
+  45   4                                      TMOD &= ~0x30;          //Timer1_16bitAutoReload;
+  46   4                                      AUXR |=  (1<<6);        //Timer1 set as 1T mode
+  47   4                                      TH1 = (u8)(j>>8);
+  48   4                                      TL1 = (u8)j;
+  49   4                                      ET1 = 0;        //��ֹ�ж�
+  50   4                                      TMOD &= ~0x40;  //��ʱ
+  51   4                                      INT_CLKO &= ~0x02;      //�����ʱ��
+  52   4                                      TR1  = 1;
+  53   4                              }
+  54   3                              else if(COMx->UART_BRT_Use == BRT_Timer2)
+C51 COMPILER V9.52.0.0   USART                                                             02/18/2021 00:01:39 PAGE 2   
+
+  55   3                              {
+  56   4                                      AUXR &= ~(1<<4);        //Timer stop
+  57   4                                      AUXR |= 0x01;           //S1 BRT Use Timer2;
+  58   4                                      AUXR &= ~(1<<3);        //Timer2 set As Timer
+  59   4                                      AUXR |=  (1<<2);        //Timer2 set as 1T mode
+  60   4                                      TH2 = (u8)(j>>8);
+  61   4                                      TL2 = (u8)j;
+  62   4                                      IE2  &= ~(1<<2);        //��ֹ�ж�
+  63   4                                      AUXR &= ~(1<<3);        //��ʱ
+  64   4                                      AUXR |=  (1<<4);        //Timer run enable
+  65   4                              }
+  66   3                              else return 2;  //����
+  67   3                      }
+  68   2                      else if(COMx->UART_Mode == UART_ShiftRight)
+  69   2                      {
+  70   3                              if(COMx->BaudRateDouble == ENABLE)      AUXR |=  (1<<5);        //�̶�������SysClk/2
+  71   3                              else                                                            AUXR &= ~(1<<5);        //�̶�������SysClk/12
+  72   3                      }
+  73   2                      else if(COMx->UART_Mode == UART_9bit)   //�̶�������SysClk*2^SMOD/64
+  74   2                      {
+  75   3                              if(COMx->BaudRateDouble == ENABLE)      PCON |=  (1<<7);        //�̶�������SysClk/32
+  76   3                              else                                                            PCON &= ~(1<<7);        //�̶�������SysClk/64
+  77   3                      }
+  78   2                      if(COMx->UART_Interrupt == ENABLE)      ES = 1; //�����ж�
+  79   2                      else                                                            ES = 0; //��ֹ�ж�
+  80   2                      if(COMx->UART_RxEnable == ENABLE)       REN = 1;        //��������
+  81   2                      else                                                            REN = 0;        //��ֹ����
+  82   2                      P_SW1 = (P_SW1 & 0x3f) | (COMx->UART_P_SW & 0xc0);      //�л�IO
+  83   2                      if(COMx->UART_RXD_TXD_Short == ENABLE)  PCON2 |=  (1<<4);       //�ڲ���·RXD��TXD, ���м�,
+             - ENABLE,DISABLE
+  84   2                      else                                                                    PCON2 &= ~(1<<4);
+  85   2                      return  0;
+  86   2              }
+  87   1      
+  88   1              if(UARTx == USART2)
+  89   1              {
+  90   2                      COM2.id = 2;
+  91   2                      COM2.TX_read    = 0;
+  92   2                      COM2.TX_write   = 0;
+  93   2                      COM2.B_TX_busy  = 0;
+  94   2                      COM2.RX_Cnt     = 0;
+  95   2                      COM2.RX_TimeOut = 0;
+  96   2                      COM2.B_RX_OK    = 0;
+  97   2                      for(i=0; i<COM_TX2_Lenth; i++)  TX2_Buffer[i] = 0;
+  98   2                      for(i=0; i<COM_RX2_Lenth; i++)  RX2_Buffer[i] = 0;
+  99   2      
+ 100   2                      if((COMx->UART_Mode == UART_9bit_BRTx) ||(COMx->UART_Mode == UART_8bit_BRTx))   //�ɱ䲨����
+ 101   2                      {
+ 102   3                              if(COMx->UART_Polity == PolityHigh)             IP2 |=  1;      //�����ȼ��ж�
+ 103   3                              else                                                                    IP2 &= ~1;      //�����ȼ��ж�
+ 104   3                              if(COMx->UART_Mode == UART_9bit_BRTx)   S2CON |=  (1<<7);       //9bit
+ 105   3                              else                                                                    S2CON &= ~(1<<7);       //8bit
+ 106   3                              j = (MAIN_Fosc / 4) / COMx->UART_BaudRate;      //��1T����
+ 107   3                              if(j >= 65536UL)        return 2;       //����
+ 108   3                              j = 65536UL - j;
+ 109   3                              AUXR &= ~(1<<4);        //Timer stop
+ 110   3                              AUXR &= ~(1<<3);        //Timer2 set As Timer
+ 111   3                              AUXR |=  (1<<2);        //Timer2 set as 1T mode
+ 112   3                              TH2 = (u8)(j>>8);
+ 113   3                              TL2 = (u8)j;
+ 114   3                              IE2  &= ~(1<<2);        //��ֹ�ж�
+ 115   3                              AUXR |=  (1<<4);        //Timer run enable
+C51 COMPILER V9.52.0.0   USART                                                             02/18/2021 00:01:39 PAGE 3   
+
+ 116   3                      }
+ 117   2                      else    return 2;       //ģʽ����
+ 118   2                      if(COMx->UART_Interrupt == ENABLE)      IE2   |=  1;            //�����ж�
+ 119   2                      else                                                            IE2   &= ~1;            //��ֹ�ж�
+ 120   2                      if(COMx->UART_RxEnable == ENABLE)       S2CON |=  (1<<4);       //��������
+ 121   2                      else                                                            S2CON &= ~(1<<4);       //��ֹ����
+ 122   2                      P_SW2 = (P_SW2 & ~1) | (COMx->UART_P_SW & 0x01);        //�л�IO
+ 123   2              }
+ 124   1      
+ 125   1          return 0;
+ 126   1      }
+ 127          
+ 128          
+ 129          /*************** װ�ش��ڷ��ͻ��� *******************************/
+ 130          void TX1_write2buff(u8 dat)     //д�뷢�ͻ��壬ָ��+1
+ 131          {
+ 132   1          while(COM1.B_TX_busy);
+ 133   1          if(dat == '\n') {
+ 134   2              TX1_Buffer[COM1.TX_write] = 0x0D;
+ 135   2              if(++COM1.TX_write >= COM_TX1_Lenth)    COM1.TX_write = 0;
+ 136   2              TX1_Buffer[COM1.TX_write] = 0x0A;       //װ���ͻ���
+ 137   2              if(++COM1.TX_write >= COM_TX1_Lenth)    COM1.TX_write = 0;
+ 138   2          } else {
+ 139   2              TX1_Buffer[COM1.TX_write] = dat;        //װ���ͻ���
+ 140   2              if(++COM1.TX_write >= COM_TX1_Lenth)    COM1.TX_write = 0;
+ 141   2          }
+ 142   1      
+ 143   1              if(COM1.B_TX_busy == 0)         //����
+ 144   1              {  
+ 145   2                      COM1.B_TX_busy = 1;             //��־æ
+ 146   2                      TI = 1;                                 //���������ж�
+ 147   2              }
+ 148   1      }
+ 149          
+ 150          void TX2_write2buff(u8 dat)     //д�뷢�ͻ��壬ָ��+1
+ 151          {
+ 152   1          while(COM2.B_TX_busy);
+ 153   1              TX2_Buffer[COM2.TX_write] = dat;        //װ���ͻ���
+ 154   1              if(++COM2.TX_write >= COM_TX2_Lenth)    COM2.TX_write = 0;
+ 155   1      
+ 156   1              if(COM2.B_TX_busy == 0)         //����
+ 157   1              {  
+ 158   2                      COM2.B_TX_busy = 1;             //��־æ
+ 159   2                      SET_TI2();                              //���������ж�
+ 160   2              }
+ 161   1      }
+ 162          
+ 163          void PrintString1(u8 *puts)
+ 164          {
+ 165   1          for (; ((*puts != 0) && (*puts != '\0'));   puts++)  TX1_write2buff(*puts);         //����ֹͣ��0�
+             -����
+ 166   1      }
+ 167          
+ 168          void PrintString2(u8 *puts)
+ 169          {
+ 170   1          for (; *puts != 0;  puts++)  TX2_write2buff(*puts);         //����ֹͣ��0����
+ 171   1      }
+ 172          
+ 173          /*
+ 174          void COMx_write2buff(COMx_Define *COMx, u8 dat) //д�뷢�ͻ��壬ָ��+1
+ 175          {
+ 176                  if(COMx->id == 1)       TX1_write2buff(dat);
+C51 COMPILER V9.52.0.0   USART                                                             02/18/2021 00:01:39 PAGE 4   
+
+ 177                  if(COMx->id == 2)       TX2_write2buff(dat);
+ 178          }
+ 179          
+ 180          void PrintString(COMx_Define *COMx, u8 *puts)
+ 181          {
+ 182              for (; *puts != 0;  puts++)  COMx_write2buff(COMx,*puts);   //����ֹͣ��0����
+ 183          }
+ 184          */
+ 185          
+ 186          i8 putchar(i8 c)
+ 187          {
+ 188   1          TX1_write2buff((u8)c);
+ 189   1          return c;
+ 190   1      }
+ 191          
+ 192          
+ 193          //void uart_printf(const i8 *fmt,...)
+ 194          //{
+ 195          //      va_list ap;
+ 196          //      i8 xdata string[128];//??????RAM,?????RAM,????????RAM??(???1024)
+ 197                  
+ 198          //      va_start(ap,fmt);
+ 199          //      vsprintf(string,fmt,ap);//???????sprintf??,?????,??????,????
+ 200          //      PrintString1(string);
+ 201          //      va_end(ap);
+ 202          //}
+ 203          
+ 204          /********************* UART1�жϺ���************************/
+ 205          void UART1_int (void) interrupt UART1_VECTOR
+ 206          {
+ 207   1              if(RI)
+ 208   1              {
+ 209   2                      RI = 0;
+ 210   2                      if(COM1.B_RX_OK == 0)
+ 211   2                      {
+ 212   3                              if(COM1.RX_Cnt >= COM_RX1_Lenth)        COM1.RX_Cnt = 0;
+ 213   3                              RX1_Buffer[COM1.RX_Cnt++] = SBUF;
+ 214   3                              COM1.RX_TimeOut = TimeOutSet1;
+ 215   3                      }
+ 216   2              }
+ 217   1      
+ 218   1              if(TI)
+ 219   1              {
+ 220   2                      TI = 0;
+ 221   2                      if(COM1.TX_read != COM1.TX_write)
+ 222   2                      {
+ 223   3                              SBUF = TX1_Buffer[COM1.TX_read];
+ 224   3                              if(++COM1.TX_read >= COM_TX1_Lenth)             COM1.TX_read = 0;
+ 225   3                      }
+ 226   2                      else    COM1.B_TX_busy = 0;
+ 227   2              }
+ 228   1      }
+ 229          
+ 230          /********************* UART2�жϺ���************************/
+ 231          void UART2_int (void) interrupt UART2_VECTOR
+ 232          {
+ 233   1              if(RI2)
+ 234   1              {
+ 235   2                      CLR_RI2();
+ 236   2                      if(COM2.B_RX_OK == 0)
+ 237   2                      {
+ 238   3                              if(COM2.RX_Cnt >= COM_RX2_Lenth)        COM2.RX_Cnt = 0;
+C51 COMPILER V9.52.0.0   USART                                                             02/18/2021 00:01:39 PAGE 5   
+
+ 239   3                              RX2_Buffer[COM2.RX_Cnt++] = S2BUF;
+ 240   3                              COM2.RX_TimeOut = TimeOutSet2;
+ 241   3                      }
+ 242   2              }
+ 243   1      
+ 244   1              if(TI2)
+ 245   1              {
+ 246   2                      CLR_TI2();
+ 247   2                      if(COM2.TX_read != COM2.TX_write)
+ 248   2                      {
+ 249   3                              S2BUF = TX2_Buffer[COM2.TX_read];
+ 250   3                              if(++COM2.TX_read >= COM_TX2_Lenth)             COM2.TX_read = 0;
+ 251   3                      }
+ 252   2                      else    COM2.B_TX_busy = 0;
+ 253   2              }
+ 254   1      
+ 255   1      }
+ 256          
+ 257          
+ 258          
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1349    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =    190       9
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

@@ -1,0 +1,566 @@
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 1   
+
+
+C51 COMPILER V9.52.0.0, COMPILATION OF MODULE FZH181
+OBJECT MODULE PLACED IN .\Objects\fzh181.obj
+COMPILER INVOKED BY: C:\Keil_c51\C51\BIN\C51.EXE code\fzh181.c LARGE BROWSE INCDIR(.\code;.\code\stclib) DEBUG OBJECTEXT
+                    -END PRINT(.\Listing\fzh181.lst) OBJECT(.\Objects\fzh181.obj)
+
+line level    source
+
+   1          
+   2          #include <intrins.h>                       //包含nop指令头文件
+   3          #include "api_config.h"                    //MCU头文件
+   4          
+   5          /********************定义数据*************************/
+   6          #define MSR_B1_K1S1_SYNC           (0x01) /* 同步 */
+   7          #define MSR_B1_K1S2_SET            (0x08) /* 设置 */
+   8          #define MSR_B2_K1S3_UP             (0x01) /* 上升 */
+   9          #define MSR_B2_K1S4_DOWN           (0x08) /* 下降 */
+  10          #define MSR_B3_K1S5_PAUSE          (0x01) /* 暂停 */
+  11          #define MSR_B3_K1S6_CMUT           (0x08) /* 通讯 */
+  12          #define MSR_B1_K2S1_STOP           (0x02) /* 停止 */
+  13          #define MSR_B1_K2S2_BOOT           (0x10) /* 启动 */
+  14          #define MSR_B2_K2S3_PRE            (0x02) /* 预紧 */
+  15          #define MSR_B2_K2S4_UNLOAD         (0x10) /* 卸载 */
+  16          
+  17          #define SLV_B1_K1S1_RSET           (0x01) /* 休眠 */
+  18          #define SLV_B1_K1S2_SET            (0x08) /* 设置 */
+  19          #define SLV_B2_K1S3_MUP            (0x01) /* 上升 */
+  20          #define SLV_B2_K1S4_MDOWN          (0x08) /* 下降 */
+  21          #define SLV_B3_K1S5_PAUSE          (0x01) /* 暂停 */
+  22          #define SLV_B3_K1S6_CMUT           (0x08) /* 通信 */
+  23          #define SLV_B1_K2S1_POFF           (0x02) /* 急停 */
+  24          
+  25          static bool isUpdateDisplayContentNow = 0;
+  26          static u8 dispBuf[14] = {0x0};
+  27          static u8 lastDispBuf[10] = {0x0};
+  28          static u8 comDispBuf[10] = {0x0};
+  29          static u8 KeyCode[5] = {0x0};    //为存储按键值定义的数组
+  30          
+  31          /* 高位：记录第二次按下的按键 低位：记录第一次按下的按键 */
+  32          static KEYCODE_REC_S KeyBitNo = {0x0, 0x0};
+  33          static u16 FlashBitNo = 0x0;
+  34          
+  35          /***************发送8bit数据，从低位开始**************/
+  36          static void send_8bit( u8 dat )  //发送8位数据,从低位开始
+  37          {
+  38   1          u8 i;
+  39   1      
+  40   1          for(i = 0; i < 8; i++)
+  41   1          {
+  42   2              FZH181_PIN_CLK = 0;
+  43   2              delay_us(5);
+  44   2      
+  45   2              if( dat&0x01 )
+  46   2                  FZH181_PIN_DIO = 1;
+  47   2              else
+  48   2                  FZH181_PIN_DIO = 0;
+  49   2              delay_us(5);
+  50   2      
+  51   2              FZH181_PIN_CLK = 1;
+  52   2              delay_us(10);
+  53   2              dat >>= 1;
+  54   2          }
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 2   
+
+  55   1       
+  56   1          //FZH181_PIN_CLK = 0;
+  57   1          FZH181_PIN_DIO = 0;
+  58   1      }
+  59          
+  60          /******************发送控制命令***********************/
+  61          static void send_command(u8 com)  //发送命令字节
+  62          {
+  63   1          FZH181_PIN_STB = 1;                           //STB置高
+  64   1      
+  65   1          delay_us(10);
+  66   1      
+  67   1          FZH181_PIN_STB = 0;                           //STB置低
+  68   1          delay_us(5);
+  69   1      
+  70   1          send_8bit(com);                               //发送8bit数据
+  71   1          delay_us(10);
+  72   1      }
+  73          
+  74          /****************读取按键值并存储*******************/
+  75          static void getKeyCodeFromChipReg(void)                   //读取5字节按键值并存入数组KEY[],从低字节、�
+             -�位开始
+  76          {
+  77   1          u8 i;
+  78   1          u8 j;
+  79   1          
+  80   1          //KeyCode[0] = KeyCode[1] = KeyCode[2] = 0;
+  81   1          //KeyCode[3] = KeyCode[4] = 0;
+  82   1          
+  83   1          //if(isUpdateDisplayContentNow) return;
+  84   1          
+  85   1          send_command(0x42);                   //发送读按键命令
+  86   1          delay_us(30);
+  87   1          FZH181_PIN_DIO = 1;                           //释放DIO数据总线
+  88   1      
+  89   1      
+  90   1          for(j = 0; j < 5; j++)                        //连续读取5个字节
+  91   1          {
+  92   2              for(i = 0; i < 8; i++)
+  93   2              {
+  94   3                  FZH181_PIN_CLK = 0;
+  95   3                  delay_us(10);
+  96   3      
+  97   3                  KeyCode[j] = KeyCode[j]>>1;
+  98   3      
+  99   3                  FZH181_PIN_CLK = 1;
+ 100   3      
+ 101   3                  if(FZH181_PIN_DIO == 1)
+ 102   3                  {
+ 103   4                      KeyCode[j] = KeyCode[j] | 0x80;
+ 104   4                  }
+ 105   3                  delay_us(10);
+ 106   3              }
+ 107   2              delay_us(20);
+ 108   2          }
+ 109   1      
+ 110   1          FZH181_PIN_CLK = 1;
+ 111   1          FZH181_PIN_DIO = 0;
+ 112   1          FZH181_PIN_STB = 1;
+ 113   1      }
+ 114          
+ 115          /************显示函数，数码管1~7位显示0~6************/
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 3   
+
+ 116          static void updateDisplayContent(void)   //显示函数，1~10位数码管显示0~9
+ 117          {
+ 118   1          u8 i;
+ 119   1      
+ 120   1          send_command(0x03);     //设置显示模式，7位10段模式
+ 121   1          send_command(0x40);     //设置数据命令，采用地址自动加1模式
+ 122   1          send_command(0xc0);     //设置显示地址，从00H开始
+ 123   1      
+ 124   1          for(i = 0; i < 14; i++)
+ 125   1          {
+ 126   2              send_8bit(dispBuf[i]);      //从00H开始，偶数地址送显示数据
+ 127   2              //send_8bit(0x00);      //因为SEG9-14未用到，所以奇数地址送全0
+ 128   2          }
+ 129   1      
+ 130   1          send_command(0x8F);     //设置显示命令，打开显示并设置占空比14/16.
+ 131   1          FZH181_PIN_STB=1;
+ 132   1      
+ 133   1          isUpdateDisplayContentNow = 0;
+ 134   1      
+ 135   1      }
+ 136          KEYCODE_REC_S* getKeyCode(void)
+ 137          {
+ 138   1          return (&KeyBitNo);
+ 139   1      }
+ 140          
+ 141          #if 0
+              void clrKeyStatus(u16 sKey)
+              {
+                  if(isMasterDevice()) {
+                      if(sKey == MSR_KEY_SYNC)   { KeyBitNo &= ~(MSR_KEY_SYNC); }
+                      if(sKey == MSR_KEY_SET)    { KeyBitNo &= ~(MSR_KEY_SET); }
+                      if(sKey == MSR_KEY_STOP)   { KeyBitNo &= ~(MSR_KEY_STOP); }
+                      if(sKey == MSR_KEY_BOOT)   { KeyBitNo &= ~(MSR_KEY_BOOT); }
+                      
+                      if(sKey == MSR_KEY_UP)     { KeyBitNo &= ~(MSR_KEY_UP); }
+                      if(sKey == MSR_KEY_DOWN)   { KeyBitNo &= ~(MSR_KEY_DOWN); }
+                      if(sKey == MSR_KEY_PRE)    { KeyBitNo &= ~(MSR_KEY_PRE); }
+                      if(sKey == MSR_KEY_UNLOAD) { KeyBitNo &= ~(MSR_KEY_UNLOAD); }
+                      
+                      if(sKey == MSR_KEY_PAUSE)  { KeyBitNo &= ~(MSR_KEY_PAUSE); }
+                      if(sKey == MSR_KEY_CMUT)   { KeyBitNo &= ~(MSR_KEY_CMUT); }
+                      if(sKey == MSR_KEY_ALL )   { KeyBitNo = 0x0; }
+                  } else {
+                      if(sKey == SLV_KEY_RSET)   { KeyBitNo &= ~(SLV_KEY_RSET); } //K1与KS1按键按下，数码管显�
+             -��数字0~6
+                      if(sKey == SLV_KEY_SET)    { KeyBitNo &= ~(SLV_KEY_SET); }
+                      if(sKey == SLV_KEY_POFF)   { KeyBitNo &= ~(SLV_KEY_POFF); }
+                  
+                      if(sKey == SLV_KEY_MUP)    { KeyBitNo &= ~(SLV_KEY_MUP); } //K1与KS2按键按下，数码管显�
+             -�关闭
+                      if(sKey == SLV_KEY_MDOWN)  { KeyBitNo &= ~(SLV_KEY_MDOWN); }
+              
+                      if(sKey == SLV_KEY_PAUSE)  { KeyBitNo &= ~(SLV_KEY_PAUSE); } //K1与KS2按键按下，数码管显
+             -示关闭
+                      if(sKey == SLV_KEY_CMUT)   { KeyBitNo &= ~(SLV_KEY_CMUT); }
+                  }
+              }
+              #endif
+ 171          
+ 172          void clrKeyStatus(KEYCODE_DEF_E sKey)
+ 173          {
+ 174   1          if(sKey == MSR_KEY_ALL) {
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 4   
+
+ 175   2              KeyBitNo.firstKeyCode = 0x0;
+ 176   2              KeyBitNo.secondKeyCode = 0x0;
+ 177   2              return ;
+ 178   2          }
+ 179   1      
+ 180   1          if((KeyBitNo.firstKeyCode) && (KeyBitNo.firstKeyCode == sKey))
+ 181   1              KeyBitNo.firstKeyCode = 0x0;
+ 182   1          if((KeyBitNo.secondKeyCode) && (KeyBitNo.secondKeyCode == sKey))
+ 183   1              KeyBitNo.secondKeyCode = 0x0;
+ 184   1      }
+ 185          
+ 186          static void setKeyStatus(KEYCODE_DEF_E sKey)
+ 187          {
+ 188   1          if((KeyBitNo.firstKeyCode == sKey) || (KeyBitNo.secondKeyCode == sKey)
+ 189   1              || ((KeyBitNo.firstKeyCode) && (KeyBitNo.secondKeyCode))) {
+ 190   2              return ;
+ 191   2          }
+ 192   1      
+ 193   1          if((KeyBitNo.firstKeyCode == 0x0) && (KeyBitNo.secondKeyCode == 0X0)){
+ 194   2              KeyBitNo.firstKeyCode = sKey;
+ 195   2          } else if((KeyBitNo.firstKeyCode) && (KeyBitNo.secondKeyCode == 0X0)) {
+ 196   2              KeyBitNo.secondKeyCode = sKey;
+ 197   2          }
+ 198   1      
+ 199   1          return ;
+ 200   1      }
+ 201          
+ 202          void ledDisplayFlashEnable(u8 ledNo, bool bFlag)
+ 203          {
+ 204   1          /* Check ledNo */
+ 205   1          if(isMasterDevice()) {
+ 206   2              if(ledNo > 5 || ledNo < 0) return ;
+ 207   2          } else {
+ 208   2              if(ledNo > 9 || ledNo < 0) return ;
+ 209   2          }
+ 210   1      
+ 211   1          if(bFlag) {
+ 212   2              FlashBitNo |= (0x1 << ledNo);
+ 213   2          } else {
+ 214   2              FlashBitNo &= ~(0x1 << ledNo);
+ 215   2          }
+ 216   1      }
+ 217          
+ 218          void ledDisplayClose(u8 ledNo)
+ 219          {
+ 220   1          u8 tabCode = 0x00;
+ 221   1          u16 bufVal = (0x1 << ledNo);
+ 222   1          
+ 223   1          /* Check ledNo */
+ 224   1          if(isMasterDevice()) {
+ 225   2              if(ledNo > 5 || ledNo < 0) return ;
+ 226   2          } else {
+ 227   2              if(ledNo > 9 || ledNo < 0) return ;
+ 228   2          }
+ 229   1      
+ 230   1          if(comDispBuf[ledNo] == tabCode) return;
+ 231   1          else comDispBuf[ledNo] = tabCode;
+ 232   1      
+ 233   1          if(ledNo > 7) {
+ 234   2              dispBuf[1] &= ( ~(0x1 << (ledNo - 8)));
+ 235   2              dispBuf[3] &= ( ~(0x1 << (ledNo - 8)));
+ 236   2              dispBuf[5] &= ( ~(0x1 << (ledNo - 8)));
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 5   
+
+ 237   2              dispBuf[7] &= ( ~(0x1 << (ledNo - 8)));
+ 238   2              dispBuf[9] &= ( ~(0x1 << (ledNo - 8)));
+ 239   2              dispBuf[11] &= ( ~(0x1 << (ledNo - 8)));
+ 240   2              dispBuf[13] &= ( ~(0x1 << (ledNo - 8)));
+ 241   2          } else {
+ 242   2              dispBuf[0] &= ( ~(0x1 << ledNo));
+ 243   2              dispBuf[2] &= ( ~(0x1 << ledNo));
+ 244   2              dispBuf[4] &= ( ~(0x1 << ledNo));
+ 245   2              dispBuf[6] &= ( ~(0x1 << ledNo));
+ 246   2              dispBuf[8] &= ( ~(0x1 << ledNo));
+ 247   2              dispBuf[10] &= ( ~(0x1 << ledNo));
+ 248   2              dispBuf[12] &= ( ~(0x1 << ledNo));
+ 249   2          }
+ 250   1      
+ 251   1          isUpdateDisplayContentNow = 1;
+ 252   1          //updateDisplayContent(); /* update display content */
+ 253   1      }
+ 254          
+ 255          /* ledNo: Master = 0 -5  Slave = 0 -9 */
+ 256          void ledDisplayCtrl(u8 ledNo, i8 dispVal)
+ 257          {
+ 258   1          u8 tabCode = 0x00;
+ 259   1          u16 bufVal = (0x1 << ledNo);
+ 260   1      
+ 261   1          /* Check ledNo */
+ 262   1          if(isMasterDevice()) {
+ 263   2              if(ledNo > 5 || ledNo < 0) return ;
+ 264   2          } else {
+ 265   2              if(ledNo > 9 || ledNo < 0) return ;
+ 266   2          }
+ 267   1      
+ 268   1          if(comDispBuf[ledNo] == dispVal) return;
+ 269   1          else comDispBuf[ledNo] = dispVal;
+ 270   1      
+ 271   1          lastDispBuf[ledNo] = dispVal;
+ 272   1      
+ 273   1          switch(dispVal) {
+ 274   2              case '0':
+ 275   2              case   0: tabCode = 0x3F; break;
+ 276   2              case '1':
+ 277   2              case   1: tabCode = 0x06; break;
+ 278   2              case '2':
+ 279   2              case   2: tabCode = 0x5B; break;
+ 280   2              case '3':
+ 281   2              case   3: tabCode = 0x4F; break;
+ 282   2              case '4':
+ 283   2              case   4: tabCode = 0x66; break;
+ 284   2              case '5':
+ 285   2              case   5: tabCode = 0x6D; break;
+ 286   2              case '6':
+ 287   2              case   6: tabCode = 0x7D; break;
+ 288   2              case '7':
+ 289   2              case   7: tabCode = 0x07; break;
+ 290   2              case '8':
+ 291   2              case   8: tabCode = 0x7F; break;
+ 292   2              case '9':
+ 293   2              case   9: tabCode = 0x6F; break;
+ 294   2      
+ 295   2              case 'A': tabCode = 0x77; break;
+ 296   2              case 'B': tabCode = 0x7F; break;
+ 297   2              case 'b': tabCode = 0x7C; break;
+ 298   2              case 'c': tabCode = 0x58; break;
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 6   
+
+ 299   2              case 'C': tabCode = 0x39; break;
+ 300   2              case 'D':
+ 301   2              case 'd': tabCode = 0x5E; break;
+ 302   2              case 'E': tabCode = 0x79; break;
+ 303   2              case 'F': tabCode = 0x71; break;
+ 304   2              case 'H': tabCode = 0x76; break;
+ 305   2              case 'L': tabCode = 0x38; break;
+ 306   2              case 'l': tabCode = 0x30; break;
+ 307   2              case 'n': tabCode = 0x37; break;
+ 308   2              case 'O':
+ 309   2              case 'o': tabCode = 0x5C; break;
+ 310   2              case 'P':
+ 311   2              case 'p': tabCode = 0x73; break;
+ 312   2              case 'Q':
+ 313   2              case 'q': tabCode = 0x67; break;
+ 314   2              case 'S': tabCode = 0x6D; break;
+ 315   2              case 'U':
+ 316   2              case 'u': tabCode = 0x3E; break;
+ 317   2              case 'Y':
+ 318   2              case 'y': tabCode = 0x6E; break;
+ 319   2              case '-': tabCode = 0x40; break;
+ 320   2              default: return; 
+ 321   2          }
+ 322   1          
+ 323   1          if(ledNo > 7) {
+ 324   2              if(tabCode & 0x1)   dispBuf[1] |= (0x1 << (ledNo - 8));
+ 325   2              else                dispBuf[1] &= ( ~(0x1 << (ledNo - 8)));
+ 326   2              if(tabCode & 0x2)   dispBuf[3] |= (0x1 << (ledNo - 8));
+ 327   2              else                dispBuf[3] &= ( ~(0x1 << (ledNo - 8)));
+ 328   2              if(tabCode & 0x4)   dispBuf[5] |= (0x1 << (ledNo - 8));
+ 329   2              else                dispBuf[5] &= ( ~(0x1 << (ledNo - 8)));
+ 330   2              if(tabCode & 0x8)   dispBuf[7] |= (0x1 << (ledNo - 8));
+ 331   2              else                dispBuf[7] &= ( ~(0x1 << (ledNo - 8)));
+ 332   2              if(tabCode & 0x10)  dispBuf[9] |= (0x1 << (ledNo - 8));
+ 333   2              else                dispBuf[9] &= ( ~(0x1 << (ledNo - 8)));
+ 334   2              if(tabCode & 0x20)  dispBuf[11] |= (0x1 << (ledNo - 8));
+ 335   2              else                dispBuf[11] &= ( ~(0x1 << (ledNo - 8)));
+ 336   2              if(tabCode & 0x40)  dispBuf[13] |= (0x1 << (ledNo - 8));
+ 337   2              else                dispBuf[13] &= ( ~(0x1 << (ledNo - 8)));
+ 338   2          } else {
+ 339   2              if(tabCode & 0x1)   dispBuf[0] |= (0x1 << ledNo);
+ 340   2              else                dispBuf[0] &= ( ~(0x1 << ledNo));
+ 341   2              if(tabCode & 0x2)   dispBuf[2] |= (0x1 << ledNo);
+ 342   2              else                dispBuf[2] &= ( ~(0x1 << ledNo));
+ 343   2              if(tabCode & 0x4)   dispBuf[4] |= (0x1 << ledNo);
+ 344   2              else                dispBuf[4] &= ( ~(0x1 << ledNo));
+ 345   2              if(tabCode & 0x8)   dispBuf[6] |= (0x1 << ledNo);
+ 346   2              else                dispBuf[6] &= ( ~(0x1 << ledNo));
+ 347   2              if(tabCode & 0x10)  dispBuf[8] |= (0x1 << ledNo);
+ 348   2              else                dispBuf[8] &= ( ~(0x1 << ledNo));
+ 349   2              if(tabCode & 0x20)  dispBuf[10] |= (0x1 << ledNo);
+ 350   2              else                dispBuf[10] &= ( ~(0x1 << ledNo));
+ 351   2              if(tabCode & 0x40)  dispBuf[12] |= (0x1 << ledNo);
+ 352   2              else                dispBuf[12] &= ( ~(0x1 << ledNo));
+ 353   2          }
+ 354   1      
+ 355   1          //while(isUpdateDisplayContentNow) ;
+ 356   1          isUpdateDisplayContentNow = 1;
+ 357   1          //updateDisplayContent(); /* update display content */
+ 358   1      
+ 359   1          return ;
+ 360   1      }
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 7   
+
+ 361          
+ 362          /*****************按键处理函数*********************/
+ 363          
+ 364          
+ 365          #if TEST_MODE
+ 366          static u32 tmp = 0;
+ 367          void LedDisplay_Test(i8 Val)
+ 368          {
+ 369   1          ledDisplayCtrl(0,Val);          //上电显示0~6
+ 370   1          ledDisplayCtrl(1,Val);
+ 371   1      
+ 372   1          ledDisplayCtrl(2,Val);
+ 373   1          ledDisplayCtrl(3,Val);
+ 374   1          ledDisplayCtrl(4,Val);
+ 375   1          ledDisplayCtrl(5,Val);
+ 376   1          
+ 377   1          if(! isMasterDevice()) {
+ 378   2              ledDisplayCtrl(6,Val);
+ 379   2              ledDisplayCtrl(7,Val);
+ 380   2              ledDisplayCtrl(8,Val);
+ 381   2              ledDisplayCtrl(9,Val);
+ 382   2          }
+ 383   1      }
+ 384          
+ 385          bool LedKeyScan_Test(void)
+ 386          {
+ 387   1          if(isMasterDevice()) {
+ 388   2              if(KeyCode[0] == MSR_B1_K1S1_SYNC)   {ledDisplayCtrl(0,'p');}
+ 389   2              if(KeyCode[0] == MSR_B1_K1S2_SET)    {ledDisplayCtrl(0,'E');}
+ 390   2              if(KeyCode[0] == MSR_B1_K2S1_STOP)   {ledDisplayCtrl(0,'o');}
+ 391   2              if(KeyCode[0] == MSR_B1_K2S2_BOOT)   {ledDisplayCtrl(0,'b');}
+ 392   2              
+ 393   2              if(KeyCode[1] == MSR_B2_K1S3_UP)     {ledDisplayCtrl(1,'U');}
+ 394   2              if(KeyCode[1] == MSR_B2_K1S4_DOWN)   {ledDisplayCtrl(1,'D');}
+ 395   2              if(KeyCode[1] == MSR_B2_K2S3_PRE)    {ledDisplayCtrl(1,'P');}
+ 396   2              if(KeyCode[1] == MSR_B2_K2S4_UNLOAD) {ledDisplayCtrl(1,'L');}
+ 397   2              
+ 398   2              if(KeyCode[2] == MSR_B3_K1S5_PAUSE)  {ledDisplayCtrl(2,'P');}
+ 399   2              if(KeyCode[2] == MSR_B3_K1S6_CMUT)   {ledDisplayCtrl(2,'C');}
+ 400   2          } else {
+ 401   2              if(KeyCode[0] == SLV_B1_K1S1_RSET)   {ledDisplayCtrl(0,'-');} //K1与KS1按键按下，数码管�
+             -�示数字0~6
+ 402   2              if(KeyCode[0] == SLV_B1_K1S2_SET)    {ledDisplayCtrl(0,'S');}
+ 403   2              if(KeyCode[0] == SLV_B1_K2S1_POFF)   {ledDisplayCtrl(0,'P');}
+ 404   2          
+ 405   2              if(KeyCode[1] == SLV_B2_K1S3_MUP)    {ledDisplayCtrl(1,'P');}  //K1与KS2按键按下，数码管�
+             -��示关闭
+ 406   2              if(KeyCode[1] == SLV_B2_K1S4_MDOWN)  {ledDisplayCtrl(1,'-');} 
+ 407   2      
+ 408   2              if(KeyCode[2] == SLV_B3_K1S5_PAUSE)  {ledDisplayCtrl(2,'P');}  //K1与KS2按键按下，数码管�
+             -��示关闭
+ 409   2              if(KeyCode[2] == SLV_B3_K1S6_CMUT)   {ledDisplayCtrl(2,'C');}
+ 410   2          }
+ 411   1      
+ 412   1          if(KeyCode[0] || KeyCode[1] || KeyCode[2] || KeyCode[3] || KeyCode[4]) {
+ 413   2              //LOGD("KeyCode[%04bu]: %02bx %02bx %02bx %02bx %02bx\r\n",tmp++,
+ 414   2              //        KeyCode[0],KeyCode[1],KeyCode[2],KeyCode[3],KeyCode[4]);
+ 415   2              return TRUE;
+ 416   2          } else {
+ 417   2              return FALSE;
+ 418   2          }
+ 419   1      }
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 8   
+
+ 420          #endif
+ 421          
+ 422          /********************* Timer2ÖÐ¶Ïº¯Êý************************/
+ 423          static u8 iSecCounter = 0;
+ 424          static bool iDispFlashFlag = 0;
+ 425          void timer1_int (void) interrupt TIMER1_VECTOR
+ 426          {
+ 427   1          /* Update Counter */
+ 428   1          iSecCounter++;
+ 429   1      
+ 430   1          /* Control Led Status */
+ 431   1          ledStatusManageService(iSecCounter);
+ 432   1      
+ 433   1          /* Process Key Code */
+ 434   1          if((iSecCounter % 10) == 0) {
+ 435   2              getKeyCodeFromChipReg();
+ 436   2              if(isMasterDevice()) {
+ 437   3                  if((KeyCode[0] & 0x01) == MSR_B1_K1S1_SYNC)   { setKeyStatus(MSR_KEY_SYNC); }
+ 438   3                  if((KeyCode[0] & 0x08) == MSR_B1_K1S2_SET)    { setKeyStatus(MSR_KEY_SET); }
+ 439   3                  if((KeyCode[0] & 0x02) == MSR_B1_K2S1_STOP)   { setKeyStatus(MSR_KEY_STOP); }
+ 440   3                  if((KeyCode[0] & 0x10) == MSR_B1_K2S2_BOOT)   { ledDisplayCtrl(0,'p');setKeyStatus(MSR_KEY_BOO
+             -T); }
+ 441   3                  
+ 442   3                  if((KeyCode[1] & 0x01) == MSR_B2_K1S3_UP)     { setKeyStatus(MSR_KEY_UP); }
+ 443   3                  if((KeyCode[1] & 0x08) == MSR_B2_K1S4_DOWN)   { setKeyStatus(MSR_KEY_DOWN); }
+ 444   3                  if((KeyCode[1] & 0x02) == MSR_B2_K2S3_PRE)    { setKeyStatus(MSR_KEY_PRE); }
+ 445   3                  if((KeyCode[1] & 0x10) == MSR_B2_K2S4_UNLOAD) { setKeyStatus(MSR_KEY_UNLOAD); }
+ 446   3                  
+ 447   3                  if((KeyCode[2] & 0x01) == MSR_B3_K1S5_PAUSE)  { setKeyStatus(MSR_KEY_PAUSE); }
+ 448   3                  if((KeyCode[2] & 0x08) == MSR_B3_K1S6_CMUT)   { setKeyStatus(MSR_KEY_CMUT); }
+ 449   3              } else {
+ 450   3                  if((KeyCode[0] & 0x01) == SLV_B1_K1S1_RSET)   { setKeyStatus(SLV_KEY_RSET); } //K1与KS1按键
+             -按下，数码管显示数字0~6
+ 451   3                  if((KeyCode[0] & 0x08) == SLV_B1_K1S2_SET)    { setKeyStatus(SLV_KEY_SET); }
+ 452   3                  if((KeyCode[0] & 0x02) == SLV_B1_K2S1_POFF)   { setKeyStatus(SLV_KEY_POFF); }
+ 453   3              
+ 454   3                  if((KeyCode[1] & 0x01) == SLV_B2_K1S3_MUP)    { setKeyStatus(SLV_KEY_MUP); } //K1与KS2按键�
+             -��下，数码管显示关闭
+ 455   3                  if((KeyCode[1] & 0x08) == SLV_B2_K1S4_MDOWN)  { setKeyStatus(SLV_KEY_MDOWN); }
+ 456   3      
+ 457   3                  if((KeyCode[2] & 0x01) == SLV_B3_K1S5_PAUSE)  { setKeyStatus(SLV_KEY_PAUSE); } //K1与KS2按�
+             -�按下，数码管显示关闭
+ 458   3                  if((KeyCode[2] & 0x08) == SLV_B3_K1S6_CMUT)   { setKeyStatus(SLV_KEY_CMUT); }
+ 459   3              };
+ 460   2      
+ 461   2              if(isUpdateDisplayContentNow) {
+ 462   3                  updateDisplayContent();
+ 463   3              }
+ 464   2          }
+ 465   1      
+ 466   1          /* Check Keyboard Scan per 50ms */
+ 467   1          if((iSecCounter % 500) != 0) return;
+ 468   1          else iDispFlashFlag = ~iDispFlashFlag;
+ 469   1      
+ 470   1          /* Update display content after buffer update */
+ 471   1          if(FlashBitNo != 0) {
+ 472   2              if(FlashBitNo & 0x001) {
+ 473   3                  if(iDispFlashFlag) ledDisplayCtrl(0,lastDispBuf[0]);
+ 474   3                  else               ledDisplayClose(0);
+ 475   3              }
+ 476   2              if(FlashBitNo & 0x002) {
+ 477   3                  if(iDispFlashFlag) ledDisplayCtrl(1,lastDispBuf[1]);
+C51 COMPILER V9.52.0.0   FZH181                                                            02/18/2021 00:01:37 PAGE 9   
+
+ 478   3                  else               ledDisplayClose(1);
+ 479   3              }
+ 480   2              if(FlashBitNo & 0x004) {
+ 481   3                  if(iDispFlashFlag) ledDisplayCtrl(2,lastDispBuf[2]);
+ 482   3                  else               ledDisplayClose(2);
+ 483   3              }
+ 484   2              if(FlashBitNo & 0x008) {
+ 485   3                  if(iDispFlashFlag) ledDisplayCtrl(3,lastDispBuf[3]);
+ 486   3                  else               ledDisplayClose(3);
+ 487   3              }
+ 488   2              if(FlashBitNo & 0x010) {
+ 489   3                  if(iDispFlashFlag) ledDisplayCtrl(4,lastDispBuf[4]);
+ 490   3                  else               ledDisplayClose(4);
+ 491   3              }
+ 492   2              if(FlashBitNo & 0x020) {
+ 493   3                  if(iDispFlashFlag) ledDisplayCtrl(5,lastDispBuf[5]);
+ 494   3                  else               ledDisplayClose(5);
+ 495   3              }
+ 496   2              if(FlashBitNo & 0x040) {
+ 497   3                  if(iDispFlashFlag) ledDisplayCtrl(6,lastDispBuf[6]);
+ 498   3                  else               ledDisplayClose(6);
+ 499   3              }
+ 500   2              if(FlashBitNo & 0x080) {
+ 501   3                  if(iDispFlashFlag) ledDisplayCtrl(7,lastDispBuf[7]);
+ 502   3                  else               ledDisplayClose(7);
+ 503   3              }
+ 504   2              if(FlashBitNo & 0x100) {
+ 505   3                  if(iDispFlashFlag) ledDisplayCtrl(8,lastDispBuf[8]);
+ 506   3                  else               ledDisplayClose(8);
+ 507   3              }
+ 508   2              if(FlashBitNo & 0x200) {
+ 509   3                  if(iDispFlashFlag) ledDisplayCtrl(9,lastDispBuf[9]);
+ 510   3                  else               ledDisplayClose(9);
+ 511   3              }
+ 512   2          }
+ 513   1      
+ 514   1          return ;
+ 515   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   3230    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =     50      17
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =      2       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
