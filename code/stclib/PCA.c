@@ -1,4 +1,4 @@
-
+#include "api_config.h"
 #include	"PCA.h"
 
 bit		B_Capture0,B_Capture1,B_Capture2;
@@ -7,65 +7,75 @@ u16		CCAP0_tmp,PCA_Timer0;
 u16		CCAP1_tmp,PCA_Timer1;
 u16		CCAP2_tmp,PCA_Timer2;
 
-/*************	¹¦ÄÜËµÃ÷	**************
+/*************	ï¿½ï¿½ï¿½ï¿½Ëµï¿½ï¿½	**************
 
 
 ******************************************/
 
-u16	PWM0_low;	//PWMÊä³öµÍµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý, ÓÃ»§²ã²»¿É¼û¡£
-u16	PWM1_low;	//PWMÊä³öµÍµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý, ÓÃ»§²ã²»¿É¼û¡£
-u16	PWM2_low;	//PWMÊä³öµÍµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý, ÓÃ»§²ã²»¿É¼û¡£
+u16	PWM0_low;	//PWMï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ã»ï¿½ï¿½ã²»ï¿½É¼ï¿½ï¿½ï¿½
+u16	PWM1_low;	//PWMï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ã»ï¿½ï¿½ã²»ï¿½É¼ï¿½ï¿½ï¿½
+u16	PWM2_low;	//PWMï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½, ï¿½Ã»ï¿½ï¿½ã²»ï¿½É¼ï¿½ï¿½ï¿½
 
+static bool phaseSeqIsRight = 0;
+static u8 phaseSeqCheckCount = 0;
+
+static bool phaseALossFlag = 1;
+static bool phaseBLossFlag = 1;
+static bool phaseCLossFlag = 1;
+
+static bool phaseSeqALastFlag = 1;
+static bool phaseSeqBLastFlag = 1;
+static bool phaseSeqCLastFlag = 1;
 
 //========================================================================
-// º¯Êý: void PWMn_SetHighReg(unsigned int high)
-// ÃèÊö: ¸üÐÂÕ¼¿Õ±ÈÊý¾Ý¡£
-// ²ÎÊý: high: 	Õ¼¿Õ±ÈÊý¾Ý£¬¼´PWMÊä³ö¸ßµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý¡£
-// ·µ»Ø: ÎÞ
-// °æ±¾: VER1.0
-// ÈÕÆÚ: 2013-5-15
-// ±¸×¢: 
+// ï¿½ï¿½ï¿½ï¿½: void PWMn_SetHighReg(unsigned int high)
+// ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý¡ï¿½
+// ï¿½ï¿½ï¿½ï¿½: high: 	Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ï¿½PWMï¿½ï¿½ï¿½ï¿½ßµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+// ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½
+// ï¿½æ±¾: VER1.0
+// ï¿½ï¿½ï¿½ï¿½: 2013-5-15
+// ï¿½ï¿½×¢:
 //========================================================================
 void PWMn_Update(u8 PCA_id, u16 high)
 {
 	if(PCA_id == PCA0)
 	{
-		if(high > PWM0_HIGH_MAX)	high = PWM0_HIGH_MAX;	//Èç¹ûÐ´Èë´óÓÚ×î´óÕ¼¿Õ±ÈÊý¾Ý£¬Ç¿ÖÆÎª×î´óÕ¼¿Õ±È¡£
-		if(high < PWM0_HIGH_MIN)	high = PWM0_HIGH_MIN;	//Èç¹ûÐ´ÈëÐ¡ÓÚ×îÐ¡Õ¼¿Õ±ÈÊý¾Ý£¬Ôò·µ»Ø´íÎó´úÂë2¡£
-		CR = 0;							//Í£Ö¹PCA¡£
-		PCA_Timer0 = high;				//Êý¾ÝÔÚÕýÈ··¶Î§£¬Ôò×°ÈëÕ¼¿Õ±È¼Ä´æÆ÷¡£
-		PWM0_low = PWM0_DUTY - high;	//¼ÆËã²¢±£´æPWMÊä³öµÍµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý¡£
-		CR = 1;							//Æô¶¯PCA¡£
+		if(high > PWM0_HIGH_MAX)	high = PWM0_HIGH_MAX;	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½Ç¿ï¿½ï¿½Îªï¿½ï¿½ï¿½Õ¼ï¿½Õ±È¡ï¿½
+		if(high < PWM0_HIGH_MIN)	high = PWM0_HIGH_MIN;	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½Ð¡Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ò·µ»Ø´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½
+		CR = 0;							//Í£Ö¹PCAï¿½ï¿½
+		PCA_Timer0 = high;				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½Õ¼ï¿½Õ±È¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½
+		PWM0_low = PWM0_DUTY - high;	//ï¿½ï¿½ï¿½ã²¢ï¿½ï¿½ï¿½ï¿½PWMï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		CR = 1;							//ï¿½ï¿½ï¿½ï¿½PCAï¿½ï¿½
 	}
 	else if(PCA_id == PCA1)
 	{
-		if(high > PWM1_HIGH_MAX)	high = PWM1_HIGH_MAX;	//Èç¹ûÐ´Èë´óÓÚ×î´óÕ¼¿Õ±ÈÊý¾Ý£¬Ç¿ÖÆÎª×î´óÕ¼¿Õ±È¡£
-		if(high < PWM1_HIGH_MIN)	high = PWM1_HIGH_MIN;	//Èç¹ûÐ´ÈëÐ¡ÓÚ×îÐ¡Õ¼¿Õ±ÈÊý¾Ý£¬Ôò·µ»Ø´íÎó´úÂë2¡£
-		CR = 0;							//Í£Ö¹PCA¡£
-		PCA_Timer1 = high;				//Êý¾ÝÔÚÕýÈ··¶Î§£¬Ôò×°ÈëÕ¼¿Õ±È¼Ä´æÆ÷¡£
-		PWM1_low = PWM1_DUTY - high;	//¼ÆËã²¢±£´æPWMÊä³öµÍµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý¡£
-		CR = 1;							//Æô¶¯PCA¡£
+		if(high > PWM1_HIGH_MAX)	high = PWM1_HIGH_MAX;	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½Ç¿ï¿½ï¿½Îªï¿½ï¿½ï¿½Õ¼ï¿½Õ±È¡ï¿½
+		if(high < PWM1_HIGH_MIN)	high = PWM1_HIGH_MIN;	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½Ð¡Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ò·µ»Ø´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½
+		CR = 0;							//Í£Ö¹PCAï¿½ï¿½
+		PCA_Timer1 = high;				//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½Õ¼ï¿½Õ±È¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½
+		PWM1_low = PWM1_DUTY - high;	//ï¿½ï¿½ï¿½ã²¢ï¿½ï¿½ï¿½ï¿½PWMï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		CR = 1;							//ï¿½ï¿½ï¿½ï¿½PCAï¿½ï¿½
 	}
 	else if(PCA_id == PCA2)
 	{
-		if(high > PWM2_HIGH_MAX)		high = PWM2_HIGH_MAX;	//Èç¹ûÐ´Èë´óÓÚ×î´óÕ¼¿Õ±ÈÊý¾Ý£¬Ç¿ÖÆÎª×î´óÕ¼¿Õ±È¡£
-		if(high < PWM2_HIGH_MIN)		high = PWM2_HIGH_MIN;	//Èç¹ûÐ´ÈëÐ¡ÓÚ×îÐ¡Õ¼¿Õ±ÈÊý¾Ý£¬Ôò·µ»Ø´íÎó´úÂë2¡£
-		CR = 0;						//Í£Ö¹PCA¡£
-		PCA_Timer2 = high;						//Êý¾ÝÔÚÕýÈ··¶Î§£¬Ôò×°ÈëÕ¼¿Õ±È¼Ä´æÆ÷¡£
-		PWM2_low = PWM2_DUTY - high;				//¼ÆËã²¢±£´æPWMÊä³öµÍµçÆ½µÄPCAÊ±ÖÓÂö³å¸öÊý¡£
-		CR = 1;						//Æô¶¯PCA¡£
+		if(high > PWM2_HIGH_MAX)		high = PWM2_HIGH_MAX;	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½Ç¿ï¿½ï¿½Îªï¿½ï¿½ï¿½Õ¼ï¿½Õ±È¡ï¿½
+		if(high < PWM2_HIGH_MIN)		high = PWM2_HIGH_MIN;	//ï¿½ï¿½ï¿½Ð´ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½Ð¡Õ¼ï¿½Õ±ï¿½ï¿½ï¿½ï¿½Ý£ï¿½ï¿½ò·µ»Ø´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½
+		CR = 0;						//Í£Ö¹PCAï¿½ï¿½
+		PCA_Timer2 = high;						//ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½È·ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½×°ï¿½ï¿½Õ¼ï¿½Õ±È¼Ä´ï¿½ï¿½ï¿½ï¿½ï¿½
+		PWM2_low = PWM2_DUTY - high;				//ï¿½ï¿½ï¿½ã²¢ï¿½ï¿½ï¿½ï¿½PWMï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½PCAÊ±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+		CR = 1;						//ï¿½ï¿½ï¿½ï¿½PCAï¿½ï¿½
 	}
 }
 
 
 
 //========================================================================
-// º¯Êý: UpdatePwm(u8 PCA_id, u8 pwm_value)
-// ÃèÊö: ¸üÐÂPWMÖµ. 
-// ²ÎÊý: PCA_id: PCAÐòºÅ. È¡Öµ PCA0,PCA1,PCA2,PCA_Counter
-//		 pwm_value: pwmÖµ, Õâ¸öÖµÊÇÊä³öµÍµçÆ½µÄÊ±¼ä.
-// ·µ»Ø: none.
-// °æ±¾: V1.0, 2012-11-22
+// ï¿½ï¿½ï¿½ï¿½: UpdatePwm(u8 PCA_id, u8 pwm_value)
+// ï¿½ï¿½ï¿½ï¿½: ï¿½ï¿½ï¿½ï¿½PWMÖµ.
+// ï¿½ï¿½ï¿½ï¿½: PCA_id: PCAï¿½ï¿½ï¿½. È¡Öµ PCA0,PCA1,PCA2,PCA_Counter
+//		 pwm_value: pwmÖµ, ï¿½ï¿½ï¿½Öµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Íµï¿½Æ½ï¿½ï¿½Ê±ï¿½ï¿½.
+// ï¿½ï¿½ï¿½ï¿½: none.
+// ï¿½æ±¾: V1.0, 2012-11-22
 //========================================================================
 /*
 void	UpdatePwm(u8 PCA_id, u8 pwm_value)
@@ -77,28 +87,28 @@ void	UpdatePwm(u8 PCA_id, u8 pwm_value)
 */
 
 //========================================================================
-// º¯Êý: void	PCA_Init(PCA_id, PCA_InitTypeDef *PCAx)
-// ÃèÊö: PCA³õÊ¼»¯³ÌÐò.
-// ²ÎÊý: PCA_id: PCAÐòºÅ. È¡Öµ PCA0,PCA1,PCA2,PCA_Counter
-//		 PCAx: ½á¹¹²ÎÊý,Çë²Î¿¼PCA.hÀïµÄ¶¨Òå.
-// ·µ»Ø: none.
-// °æ±¾: V1.0, 2012-11-22
+// ï¿½ï¿½ï¿½ï¿½: void	PCA_Init(PCA_id, PCA_InitTypeDef *PCAx)
+// ï¿½ï¿½ï¿½ï¿½: PCAï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+// ï¿½ï¿½ï¿½ï¿½: PCA_id: PCAï¿½ï¿½ï¿½. È¡Öµ PCA0,PCA1,PCA2,PCA_Counter
+//		 PCAx: ï¿½á¹¹ï¿½ï¿½ï¿½ï¿½,ï¿½ï¿½Î¿ï¿½PCA.hï¿½ï¿½Ä¶ï¿½ï¿½ï¿½.
+// ï¿½ï¿½ï¿½ï¿½: none.
+// ï¿½æ±¾: V1.0, 2012-11-22
 //========================================================================
 void	PCA_Init(u8 PCA_id, PCA_InitTypeDef *PCAx)
 {
-	if(PCA_id > PCA_Counter)	return;		//id´íÎó
+	if(PCA_id > PCA_Counter)	return;		//idï¿½ï¿½ï¿½ï¿½
 
-	if(PCA_id == PCA_Counter)			//ÉèÖÃ¹«ÓÃCounter
+	if(PCA_id == PCA_Counter)			//ï¿½ï¿½ï¿½Ã¹ï¿½ï¿½ï¿½Counter
 	{
 		CR = 0;
 		CH = 0;
 		CL = 0;
-		AUXR1 = (AUXR1 & ~(3<<4)) | PCAx->PCA_IoUse;			//ÇÐ»»IO¿Ú
-		CMOD  = (CMOD  & ~(7<<1)) | PCAx->PCA_Clock;			//Ñ¡ÔñÊ±ÖÓÔ´
+		AUXR1 = (AUXR1 & ~(3<<4)) | PCAx->PCA_IoUse;			//ï¿½Ð»ï¿½IOï¿½ï¿½
+		CMOD  = (CMOD  & ~(7<<1)) | PCAx->PCA_Clock;			//Ñ¡ï¿½ï¿½Ê±ï¿½ï¿½Ô´
 		CMOD  = (CMOD  & ~1) | (PCAx->PCA_Interrupt_Mode & 1);	//ECF
-		if(PCAx->PCA_Polity == PolityHigh)		PPCA = 1;	//¸ßÓÅÏÈ¼¶ÖÐ¶Ï
-		else									PPCA = 0;	//µÍÓÅÏÈ¼¶ÖÐ¶Ï
-		CR = 1;
+		if(PCAx->PCA_Polity == PolityHigh)		PPCA = 1;	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½Ð¶ï¿½
+		else									PPCA = 0;	//ï¿½ï¿½ï¿½ï¿½ï¿½È¼ï¿½ï¿½Ð¶ï¿½
+		if(PCAx->PCA_RUN == ENABLE)	CR = 1;
 		return;
 	}
 
@@ -107,15 +117,15 @@ void	PCA_Init(u8 PCA_id, PCA_InitTypeDef *PCAx)
 
 	if(PCA_id == PCA0)
 	{
-		CCAPM0    = PCAx->PCA_Mode | PCAx->PCA_Interrupt_Mode;	//¹¤×÷Ä£Ê½, ÖÐ¶ÏÄ£Ê½
-		PCA_PWM0  = (PCA_PWM0 & ~(3<<6)) | PCAx->PCA_PWM_Wide;	//PWM¿í¶È
+		CCAPM0    = PCAx->PCA_Mode | PCAx->PCA_Interrupt_Mode;	//ï¿½ï¿½ï¿½ï¿½Ä£Ê½, ï¿½Ð¶ï¿½Ä£Ê½
+		PCA_PWM0  = (PCA_PWM0 & ~(3<<6)) | PCAx->PCA_PWM_Wide;	//PWMï¿½ï¿½ï¿½ï¿½
 
 		PCA_Timer0 = PCAx->PCA_Value;
 		B_Capture0 = 0;
 		PCA0_mode = PCAx->PCA_Mode;
 		CCAP0_tmp = PCA_Timer0;
-		CCAP0L = (u8)CCAP0_tmp;			//½«Ó°Éä¼Ä´æÆ÷Ð´Èë²¶»ñ¼Ä´æÆ÷£¬ÏÈÐ´CCAP0L
-		CCAP0H = (u8)(CCAP0_tmp >> 8);	//ºóÐ´CCAP0H
+		CCAP0L = (u8)CCAP0_tmp;			//ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½Ð´ï¿½ë²¶ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´CCAP0L
+		CCAP0H = (u8)(CCAP0_tmp >> 8);	//ï¿½ï¿½Ð´CCAP0H
 	}
 	if(PCA_id == PCA1)
 	{
@@ -126,8 +136,8 @@ void	PCA_Init(u8 PCA_id, PCA_InitTypeDef *PCAx)
 		B_Capture1 = 0;
 		PCA1_mode = PCAx->PCA_Mode;
 		CCAP1_tmp = PCA_Timer1;
-		CCAP1L = (u8)CCAP1_tmp;			//½«Ó°Éä¼Ä´æÆ÷Ð´Èë²¶»ñ¼Ä´æÆ÷£¬ÏÈÐ´CCAP0L
-		CCAP1H = (u8)(CCAP1_tmp >> 8);	//ºóÐ´CCAP0H
+		CCAP1L = (u8)CCAP1_tmp;			//ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½Ð´ï¿½ë²¶ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´CCAP0L
+		CCAP1H = (u8)(CCAP1_tmp >> 8);	//ï¿½ï¿½Ð´CCAP0H
 	}
 	if(PCA_id == PCA2)
 	{
@@ -138,51 +148,117 @@ void	PCA_Init(u8 PCA_id, PCA_InitTypeDef *PCAx)
 		B_Capture2 = 0;
 		PCA2_mode = PCAx->PCA_Mode;
 		CCAP2_tmp = PCA_Timer2;
-		CCAP2L = (u8)CCAP2_tmp;			//½«Ó°Éä¼Ä´æÆ÷Ð´Èë²¶»ñ¼Ä´æÆ÷£¬ÏÈÐ´CCAP0L
-		CCAP2H = (u8)(CCAP2_tmp >> 8);	//ºóÐ´CCAP0H
+		CCAP2L = (u8)CCAP2_tmp;			//ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½Ð´ï¿½ë²¶ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´CCAP0L
+		CCAP2H = (u8)(CCAP2_tmp >> 8);	//ï¿½ï¿½Ð´CCAP0H
 	}
 }
 
 
 //========================================================================
-// º¯Êý: void	PCA_Handler (void) interrupt PCA_VECTOR
-// ÃèÊö: PCAÖÐ¶Ï´¦Àí³ÌÐò.
-// ²ÎÊý: None
-// ·µ»Ø: none.
-// °æ±¾: V1.0, 2012-11-22
+// ï¿½ï¿½ï¿½ï¿½: void	PCA_Handler (void) interrupt PCA_VECTOR
+// ï¿½ï¿½ï¿½ï¿½: PCAï¿½Ð¶Ï´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.
+// ï¿½ï¿½ï¿½ï¿½: None
+// ï¿½ï¿½ï¿½ï¿½: none.
+// ï¿½æ±¾: V1.0, 2012-11-22
 //========================================================================
 void	PCA_Handler (void) interrupt PCA_VECTOR
 {
-	if(CCF0)		//PCAÄ£¿é0ÖÐ¶Ï
+	if(CCF0)		//PCAÄ£ï¿½ï¿½0ï¿½Ð¶ï¿½
 	{
-		CCF0 = 0;		//ÇåPCAÄ£¿é0ÖÐ¶Ï±êÖ¾
-		if(P25)	CCAP0_tmp += PCA_Timer0;	//Êä³öÎª¸ßµçÆ½£¬Ôò¸øÓ°Éä¼Ä´æÆ÷×°ÔØ¸ßµçÆ½Ê±¼ä³¤¶È
-		else	CCAP0_tmp += PWM0_low;	//Êä³öÎªµÍµçÆ½£¬Ôò¸øÓ°Éä¼Ä´æÆ÷×°ÔØµÍµçÆ½Ê±¼ä³¤¶È
-		CCAP0L = (u8)CCAP0_tmp;			//½«Ó°Éä¼Ä´æÆ÷Ð´Èë²¶»ñ¼Ä´æÆ÷£¬ÏÈÐ´CCAP0L
-		CCAP0H = (u8)(CCAP0_tmp >> 8);	//ºóÐ´CCAP0H
+		//CCF0 = 0;		//ï¿½ï¿½PCAÄ£ï¿½ï¿½0ï¿½Ð¶Ï±ï¿½Ö¾
+        if(PCA0_mode >= PCA_Mode_SoftTimer)		//PCA_Mode_SoftTimer and PCA_Mode_HighPulseOutput
+		{
+		    //if(P25)	CCAP0_tmp += PCA_Timer0;	//ï¿½ï¿½ï¿½Îªï¿½ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½Ø¸ßµï¿½Æ½Ê±ï¿½ä³¤ï¿½ï¿½
+		    //else	CCAP0_tmp += PWM0_low;	//ï¿½ï¿½ï¿½Îªï¿½Íµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½ØµÍµï¿½Æ½Ê±ï¿½ä³¤ï¿½ï¿½
+            CCAP0_tmp += PCA_Timer0;
+		    CCAP0L = (u8)CCAP0_tmp;			//ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½Ð´ï¿½ë²¶ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´CCAP0L
+		    CCAP0H = (u8)(CCAP0_tmp >> 8);	//ï¿½ï¿½Ð´CCAP0H
+		}
+		else if(PCA0_mode == PCA_Mode_Capture)
+		{
+			phaseALossFlag = 0;
+			CCAP1_tmp = CCAP1H;	//ï¿½ï¿½CCAP0H
+			CCAP1_tmp = (CCAP1_tmp << 8) + CCAP1L;
+			
+			B_Capture0 = 1;
+		}
 	}
 
-	if(CCF1)	//PCAÄ£¿é1ÖÐ¶Ï
+	if(CCF1)	//PCAÄ£ï¿½ï¿½1ï¿½Ð¶ï¿½
 	{
-		CCF1 = 0;		//ÇåPCAÄ£¿é1ÖÐ¶Ï±êÖ¾
-		if(P26)	CCAP1_tmp += PCA_Timer1;	//Êä³öÎª¸ßµçÆ½£¬Ôò¸øÓ°Éä¼Ä´æÆ÷×°ÔØ¸ßµçÆ½Ê±¼ä³¤¶È
-		else	CCAP1_tmp += PWM1_low;	//Êä³öÎªµÍµçÆ½£¬Ôò¸øÓ°Éä¼Ä´æÆ÷×°ÔØµÍµçÆ½Ê±¼ä³¤¶È
-		CCAP1L = (u8)CCAP1_tmp;			//½«Ó°Éä¼Ä´æÆ÷Ð´Èë²¶»ñ¼Ä´æÆ÷£¬ÏÈÐ´CCAP0L
-		CCAP1H = (u8)(CCAP1_tmp >> 8);	//ºóÐ´CCAP0H
+		//CCF1 = 0;		//ï¿½ï¿½PCAÄ£ï¿½ï¿½1ï¿½Ð¶Ï±ï¿½Ö¾
+        if(PCA1_mode >= PCA_Mode_SoftTimer)		//PCA_Mode_SoftTimer and PCA_Mode_HighPulseOutput
+		{
+		    //if(P26)	CCAP1_tmp += PCA_Timer1;	//ï¿½ï¿½ï¿½Îªï¿½ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½Ø¸ßµï¿½Æ½Ê±ï¿½ä³¤ï¿½ï¿½
+		    //else	CCAP1_tmp += PWM1_low;	//ï¿½ï¿½ï¿½Îªï¿½Íµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½ØµÍµï¿½Æ½Ê±ï¿½ä³¤ï¿½ï¿½
+			CCAP1_tmp += PCA_Timer1;
+		    CCAP1L = (u8)CCAP1_tmp;			//ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½Ð´ï¿½ë²¶ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´CCAP0L
+		    CCAP1H = (u8)(CCAP1_tmp >> 8);	//ï¿½ï¿½Ð´CCAP0H
+		}
+		else if(PCA1_mode == PCA_Mode_Capture)
+		{
+			phaseBLossFlag = 0;
+			if(B_Capture0) {
+				CCAP2_tmp = CCAP2H;	//ï¿½ï¿½CCAP1H
+				CCAP2_tmp = (CCAP2_tmp << 8) + CCAP2L;
+				
+				B_Capture1 = 1;
+			}
+		}
 	}
 
-	if(CCF2)	//PCAÄ£¿é2ÖÐ¶Ï
+	if(CCF2)	//PCAÄ£ï¿½ï¿½2ï¿½Ð¶ï¿½
 	{
-		CCF2 = 0;		//ÇåPCAÄ£¿é1ÖÐ¶Ï±êÖ¾
-		if(P27)	CCAP2_tmp += PCA_Timer2;	//Êä³öÎª¸ßµçÆ½£¬Ôò¸øÓ°Éä¼Ä´æÆ÷×°ÔØ¸ßµçÆ½Ê±¼ä³¤¶È
-		else	CCAP2_tmp += PWM2_low;	//Êä³öÎªµÍµçÆ½£¬Ôò¸øÓ°Éä¼Ä´æÆ÷×°ÔØµÍµçÆ½Ê±¼ä³¤¶È
-		CCAP2L = (u8)CCAP2_tmp;			//½«Ó°Éä¼Ä´æÆ÷Ð´Èë²¶»ñ¼Ä´æÆ÷£¬ÏÈÐ´CCAP0L
-		CCAP2H = (u8)(CCAP2_tmp >> 8);	//ºóÐ´CCAP0H
+		CCF2 = 0;		//ï¿½ï¿½PCAÄ£ï¿½ï¿½1ï¿½Ð¶Ï±ï¿½Ö¾
+        if(PCA2_mode >= PCA_Mode_SoftTimer)		//PCA_Mode_SoftTimer and PCA_Mode_HighPulseOutput
+		{
+		    //if(P27)	CCAP2_tmp += PCA_Timer2;	//ï¿½ï¿½ï¿½Îªï¿½ßµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½Ø¸ßµï¿½Æ½Ê±ï¿½ä³¤ï¿½ï¿½
+		    //else	CCAP2_tmp += PWM2_low;	//ï¿½ï¿½ï¿½Îªï¿½Íµï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½×°ï¿½ØµÍµï¿½Æ½Ê±ï¿½ä³¤ï¿½ï¿½
+            CCAP2_tmp += PCA_Timer2;
+		    CCAP2L = (u8)CCAP2_tmp;			//ï¿½ï¿½Ó°ï¿½ï¿½Ä´ï¿½ï¿½ï¿½Ð´ï¿½ë²¶ï¿½ï¿½Ä´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´CCAP0L
+		    CCAP2H = (u8)(CCAP2_tmp >> 8);	//ï¿½ï¿½Ð´CCAP0H
+        }
+		else if(PCA2_mode == PCA_Mode_Capture)
+		{
+			phaseCLossFlag = 0;
+			if(B_Capture0 && B_Capture1) {
+				//CCAP2_tmp = CCAP2H;	//ï¿½ï¿½CCAP2H
+				//CCAP2_tmp = (CCAP2_tmp << 8) + CCAP2L;
+				B_Capture0 = 0;
+				B_Capture1 = 0;
+				B_Capture2 = 1;
+			
+				CCF0 = 0;		//ï¿½ï¿½PCAÄ£ï¿½ï¿½0ï¿½Ð¶Ï±ï¿½Ö¾
+				CCF1 = 0;		//ï¿½ï¿½PCAÄ£ï¿½ï¿½1ï¿½Ð¶Ï±ï¿½Ö¾
+			}
+		}
 	}
 
-/*	if(CF)	//PCAÒç³öÖÐ¶Ï
+	if(CF)	//PCAï¿½ï¿½ï¿½ï¿½Ð¶ï¿½
 	{
-		CF = 0;			//ÇåPCAÒç³öÖÐ¶Ï±êÖ¾
+		CF = 0;			//ï¿½ï¿½PCAï¿½ï¿½ï¿½ï¿½Ð¶Ï±ï¿½Ö¾
 	}
-*/
+}
+
+u16 checkACPowerPhaseSequence(void)
+{
+    /* F:ï¿½ï¿½ï¿½ï¿½  0ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ ABCï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ï¿½P3.5 P3.6 P3.7 */
+    u16 phaseSeq = 0xFABC;//0x0ACB
+
+    //if(phaseALossFlag) phaseSeq &=  0x00FF;
+    //else { phaseSeq &=  0x00FF; phaseSeq |=  0x0AFF;}
+
+    //if(phaseBLossFlag) phaseSeq &=  0x0F0F;
+    //else { phaseSeq &=  0x0F0F; phaseSeq |=  0x0FBF;}
+
+    //if(phaseCLossFlag) phaseSeq &=  0x0FF0;
+    //else { phaseSeq &=  0x0FF0; phaseSeq |=  0x0FFC;}
+
+    //if(phaseSeqIsRight) phaseSeq |= 0xF000;
+    //else {
+    //    phaseSeq &=  0x0FFF;
+    //    phaseSeq = (phaseSeq & 0xFF00) | ((phaseSeq & 0x000F) << 4) | ((phaseSeq & 0x00F0) >> 4);
+    //}
+ 
+    return (phaseSeq);
 }

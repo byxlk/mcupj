@@ -54,6 +54,7 @@ typedef struct
 	u8	PCA_Interrupt_Mode;	//PCA_Rise_Active, PCA_Fall_Active, ENABLE, DISABLE
 	u8	PCA_Polity;	//优先级设置	PolityHigh,PolityLow
 	u16	PCA_Value;
+	u8	PCA_RUN;	//ENABLE, DISABLE
 } PCA_InitTypeDef;
 
 extern	bit		B_Capture0,B_Capture1,B_Capture2;

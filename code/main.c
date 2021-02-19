@@ -2,6 +2,7 @@
 #include "STC15Fxxxx.H"
 #include "USART.h"
 #include "GPIO.h"
+#include "PCA.h"
 #include "timer.h"
 #include "ADC.h"
 #include "Exti.h"
@@ -49,6 +50,38 @@ static void UART_config(void)
 	USART_Configuration(USART2, &COMx_InitStructure);		//初始化串口2 USART1,USART2
 }
 
+void	PCA_config(void)
+{
+	PCA_InitTypeDef		PCA_InitStructure;
+
+	PCA_InitStructure.PCA_Clock    = PCA_Clock_12T;		//PCA_Clock_1T, PCA_Clock_2T, PCA_Clock_4T, PCA_Clock_6T, PCA_Clock_8T, PCA_Clock_12T, PCA_Clock_Timer0_OF, PCA_Clock_ECI
+	PCA_InitStructure.PCA_IoUse    = PCA_P34_P35_P36_P37;	//PCA_P12_P11_P10_P37, PCA_P34_P35_P36_P37, PCA_P24_P25_P26_P27
+	PCA_InitStructure.PCA_Interrupt_Mode = ENABLE;		//ENABLE, DISABLE
+	PCA_InitStructure.PCA_Polity   = PolityHigh;		//优先级设置	PolityHigh,PolityLow
+	PCA_InitStructure.PCA_RUN      = DISABLE;		B_Capture0	//ENABLE, DISABLE
+	PCA_Init(PCA_Counter,&PCA_InitStructure);
+
+	PCA_InitStructure.PCA_Mode     = PCA_Mode_Capture;		//PCA_Mode_PWM, PCA_Mode_Capture, PCA_Mode_SoftTimer, PCA_Mode_HighPulseOutput
+	PCA_InitStructure.PCA_PWM_Wide = 0;		//PCA_PWM_8bit, PCA_PWM_7bit, PCA_PWM_6bit
+	PCA_InitStructure.PCA_Interrupt_Mode = PCA_Fall_Active | ENABLE;		//PCA_Rise_Active, PCA_Fall_Active, ENABLE, DISABLE
+	PCA_InitStructure.PCA_Value    = 0;			//对于PWM,高8位为PWM占空比
+	PCA_Init(PCA0,&PCA_InitStructure);
+
+	PCA_InitStructure.PCA_Mode     = PCA_Mode_Capture;	//PCA_Mode_PWM, PCA_Mode_Capture, PCA_Mode_SoftTimer, PCA_Mode_HighPulseOutput
+	PCA_InitStructure.PCA_PWM_Wide = 0;					//PCA_PWM_8bit, PCA_PWM_7bit, PCA_PWM_6bit
+	PCA_InitStructure.PCA_Interrupt_Mode = PCA_Fall_Active | ENABLE;	//(PCA_Rise_Active, PCA_Fall_Active) or (ENABLE, DISABLE)
+	PCA_InitStructure.PCA_Value    = 0;					//对于捕捉, 这个值没意义
+	PCA_Init(PCA1,&PCA_InitStructure);
+
+	PCA_InitStructure.PCA_Mode     = PCA_Mode_Capture;	//PCA_Mode_PWM, PCA_Mode_Capture, PCA_Mode_SoftTimer, PCA_Mode_HighPulseOutput
+	PCA_InitStructure.PCA_PWM_Wide = 0;					//PCA_PWM_8bit, PCA_PWM_7bit, PCA_PWM_6bit
+	PCA_InitStructure.PCA_Interrupt_Mode = PCA_Fall_Active | ENABLE;		//PCA_Rise_Active, PCA_Fall_Active, ENABLE, DISABLE
+	PCA_InitStructure.PCA_Value    = 0;				//对于软件定时, 为匹配比较值
+	PCA_Init(PCA2,&PCA_InitStructure);
+
+	CR = 1;
+}
+
 /******************** IO配置函数 **************************/
 static void MSR_SLV_CheckGpioConfig(void)
 {
@@ -82,9 +115,9 @@ static void MSR_GPIO_Config(void)
 	GPIO_InitStructure.Mode = GPIO_OUT_PP;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
 	GPIO_Inilize(GPIO_P3,&GPIO_InitStructure);	           //初始化
     
-	GPIO_InitStructure.Pin  = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;	//指定要初始化的IO, GPIO_Pin_0 ~ GPIO_Pin_7, 或操作
-	GPIO_InitStructure.Mode = GPIO_HighZ;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
-	GPIO_Inilize(GPIO_P3,&GPIO_InitStructure);	           //初始化
+	//GPIO_InitStructure.Pin  = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;	//指定要初始化的IO, GPIO_Pin_0 ~ GPIO_Pin_7, 或操作
+	//GPIO_InitStructure.Mode = GPIO_HighZ;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
+	//GPIO_Inilize(GPIO_P3,&GPIO_InitStructure);	           //初始化
 
     GPIO_InitStructure.Pin  = GPIO_Pin_4 | GPIO_Pin_5;	   //指定要初始化的IO, GPIO_Pin_0 ~ GPIO_Pin_7, 或操作
 	GPIO_InitStructure.Mode = GPIO_OUT_PP;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
@@ -123,9 +156,9 @@ static void SLV_GPIO_Config(void)
 	GPIO_InitStructure.Mode = GPIO_OUT_PP;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
 	GPIO_Inilize(GPIO_P3,&GPIO_InitStructure);	           //初始化
     
-	GPIO_InitStructure.Pin  = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;	//指定要初始化的IO, GPIO_Pin_0 ~ GPIO_Pin_7, 或操作
-	GPIO_InitStructure.Mode = GPIO_HighZ;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
-	GPIO_Inilize(GPIO_P3,&GPIO_InitStructure);	           //初始化
+	//GPIO_InitStructure.Pin  = GPIO_Pin_5 | GPIO_Pin_6 | GPIO_Pin_7;	//指定要初始化的IO, GPIO_Pin_0 ~ GPIO_Pin_7, 或操作
+	//GPIO_InitStructure.Mode = GPIO_HighZ;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
+	//GPIO_Inilize(GPIO_P3,&GPIO_InitStructure);	           //初始化
 
     GPIO_InitStructure.Pin  = GPIO_Pin_0 | GPIO_Pin_1 | GPIO_Pin_2 | GPIO_Pin_3 | GPIO_Pin_4 | GPIO_Pin_5;	   //指定要初始化的IO, GPIO_Pin_0 ~ GPIO_Pin_7, 或操作
 	GPIO_InitStructure.Mode = GPIO_OUT_PP;		           //指定IO的输入或输出方式,GPIO_PullUp,GPIO_HighZ,GPIO_OUT_OD,GPIO_OUT_PP
@@ -199,10 +232,10 @@ static void MSR_External_Interrupt_Config(void)
 	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
 	Ext_Inilize(EXT_INT0,&EXTI_InitStructure);				//初始化INT0	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
     
-    EXTI_InitStructure.EXTI_Mode      = EXT_MODE_Fall;	    //中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
-	EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
-	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
-	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
+    //EXTI_InitStructure.EXTI_Mode      = EXT_MODE_Fall;	    //中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
+	//EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
+	//EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
+	//Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
 static void SLV_External_Interrupt_Config(void)
@@ -220,10 +253,10 @@ static void SLV_External_Interrupt_Config(void)
 	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
 	Ext_Inilize(EXT_INT1,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
     
-    EXTI_InitStructure.EXTI_Mode      = EXT_MODE_Fall;	    //中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
-	EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
-	EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
-	Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
+    //EXTI_InitStructure.EXTI_Mode      = EXT_MODE_Fall;	    //中断模式,  	EXT_MODE_RiseFall, EXT_MODE_Fall
+	//EXTI_InitStructure.EXTI_Polity    = PolityHigh;			//中断优先级,   PolityLow,PolityHigh
+	//EXTI_InitStructure.EXTI_Interrupt = ENABLE;				//中断允许,     ENABLE或DISABLE
+	//Ext_Inilize(EXT_INT3,&EXTI_InitStructure);				//初始化INT1	EXT_INT0,EXT_INT1,EXT_INT2,EXT_INT3,EXT_INT4
 }
 
 #if TEST_MODE
@@ -298,16 +331,9 @@ static void doRunning_MasterMain(void)
     KEYCODE_REC_S* curKeyBitCode = getKeyCode();
     KEYCODE_REC_S lastKeyBitCode = {0x0, 0X0};
 
-    /* Step1: */
-    EA = 0; // disbale all interrupt
-
 	MSR_GPIO_Config();//GPIO init
     MSR_External_Interrupt_Config();
     
-    /* Debug Uart(P3.0/P3.1) and MAX485 Uart(P4.6/P4.7) init */
-    UART_config();
-	Timer_Config();//Timer init
-
 	EA = 1; // enable all interrupt
 
 	PrintSystemInfoToSerial(TRUE);
@@ -416,15 +442,10 @@ static void doRunning_MasterMain(void)
 static void doRunning_SlaveMain(void)
 {
     u8 i = 0;
-    EA = 0; // disbale all interrupt
 
     SLV_GPIO_Config();//GPIO init
     SLV_SPI_Config();
     SLV_External_Interrupt_Config();
-
-    /* Debug Uart(P3.0/P3.1) and MAX485 Uart(P4.6/P4.7) init */
-    UART_config();
-	Timer_Config();//Timer init
 
 	EA = 1; // enable all interrupt
 
@@ -457,8 +478,16 @@ static void doRunning_SlaveMain(void)
 
 void main(void)
 {
+    /* Step1: */
+    EA = 0; // disbale all interrupt
+
 	// Check device is master or slave
     MSR_SLV_CheckGpioConfig();
+
+    /* Debug Uart(P3.0/P3.1) and MAX485 Uart(P4.6/P4.7) init */
+    UART_config();
+	Timer_Config();//Timer init
+    PCA_config(); /* Init for phase check */
 
 #if TEST_MODE
     doRunning_HardwareTest();
