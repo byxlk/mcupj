@@ -1,7 +1,7 @@
 #include "api_config.h"
 
 static u32 iSecondCounter = 0;
-
+#if 0
 /* F:����  0������ ABC����Ӧ��P3.5 P3.6 P3.7 */
 static bool phaseSeqIsRight = 0;
 static u8 phaseSeqCheckCount = 0;
@@ -84,6 +84,7 @@ u16 checkACPowerPhaseSequence(void)
  
     return (phaseSeq);
 }
+#endif
 
 #if TEST_MODE
 void acPowerPhaseSequenceCheck_Test(void)
@@ -123,15 +124,16 @@ void timer0_int (void) interrupt TIMER0_VECTOR //1ms @22.1184MHz
     /* Counter */
     iSecondCounter++;
     
-    checkPhaseSeqALost();
-    checkPhaseSeqBLost();
-    checkPhaseSeqCLost();
+    //checkPhaseSeqALost();
+    //checkPhaseSeqBLost();
+    //checkPhaseSeqCLost();
     
     /* 减小定时器误差 */
 	//TL0 = TIMER_VALUE % 256 - TL0;
 	//TH0 = TIMER_VALUE / 256 - TH0;
 }
 
+#if 0
 /********************* INT3�жϺ��� *************************/
 void Ext_INT3 (void) interrupt INT3_VECTOR
 {
@@ -150,3 +152,4 @@ void Ext_INT3 (void) interrupt INT3_VECTOR
         }
     }    
 }
+#endif

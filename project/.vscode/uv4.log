@@ -132,29 +132,39 @@ linking...
     SEGMENT: ?PR?SPI_TRIGTX?SPI
 
 *** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_LEDDISPLAYCTRL?FZH181
+    CALLER1: ?PR?TIMER1_INT?FZH181
+    CALLER2: ?PR?PCA_HANDLER?PCA
+
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_MSR_LEDSTATUSCTRL?LED_CTRL
+    CALLER1: ?PR?PCA_HANDLER?PCA
+    CALLER2: ?C_C51STARTUP
+
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
     SEGMENT: ?PR?_LEDDISPLAYCLOSE?FZH181
     CALLER1: ?PR?TIMER1_INT?FZH181
     CALLER2: ?C_C51STARTUP
 
-Program Size: data=95.5 xdata=686 code=13406
+Program Size: data=95.1 xdata=689 code=13608
 creating hex file from ".\Objects\smart_pjst"...
 User command #1: H:\SmartPjsystem\mcupj\tools\DelTempFile_CopyHex.bat
-20210220-001119
+20210223-025706
 请按任意键继续. . . 
 
 h:\SmartPjsystem\mcupj\project>del /f /s /q ..\release_smart_pjst_*.hex 
-删除文件 - h:\SmartPjsystem\mcupj\release_smart_pjst_20210219-005928.hex
+删除文件 - h:\SmartPjsystem\mcupj\release_smart_pjst_20210223-025034.hex
 
-h:\SmartPjsystem\mcupj\project>copy Objects\smart_pjst.hex ..\release_smart_pjst_20210220-001119.hex 
+h:\SmartPjsystem\mcupj\project>copy Objects\smart_pjst.hex ..\release_smart_pjst_20210223-025706.hex 
 已复制         1 个文件。
 
-h:\SmartPjsystem\mcupj\project>dir ..\release_smart_pjst_20210220-001119.hex 
+h:\SmartPjsystem\mcupj\project>dir ..\release_smart_pjst_20210223-025706.hex 
  驱动器 H 中的卷没有标签。
  卷的序列号是 0005-6791
 
  h:\SmartPjsystem\mcupj 的目录
 
-2021/02/20  00:11            39,448 release_smart_pjst_20210220-001119.hex
-               1 个文件         39,448 字节
-               0 个目录 43,624,030,208 可用字节
-".\Objects\smart_pjst" - 0 Error(s), 38 Warning(s).
+2021/02/23  02:57            39,995 release_smart_pjst_20210223-025706.hex
+               1 个文件         39,995 字节
+               0 个目录 43,625,291,776 可用字节
+".\Objects\smart_pjst" - 0 Error(s), 40 Warning(s).

@@ -58,7 +58,7 @@ void	PCA_config(void)
 	PCA_InitStructure.PCA_IoUse    = PCA_P34_P35_P36_P37;	//PCA_P12_P11_P10_P37, PCA_P34_P35_P36_P37, PCA_P24_P25_P26_P27
 	PCA_InitStructure.PCA_Interrupt_Mode = ENABLE;		//ENABLE, DISABLE
 	PCA_InitStructure.PCA_Polity   = PolityHigh;		//优先级设置	PolityHigh,PolityLow
-	PCA_InitStructure.PCA_RUN      = DISABLE;		B_Capture0	//ENABLE, DISABLE
+	PCA_InitStructure.PCA_RUN      = DISABLE;			//ENABLE, DISABLE
 	PCA_Init(PCA_Counter,&PCA_InitStructure);
 
 	PCA_InitStructure.PCA_Mode     = PCA_Mode_Capture;		//PCA_Mode_PWM, PCA_Mode_Capture, PCA_Mode_SoftTimer, PCA_Mode_HighPulseOutput
