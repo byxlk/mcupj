@@ -90,7 +90,7 @@ void	PCA_Init(u8 PCA_id, PCA_InitTypeDef *PCAx)
 		PCA_PWM1  = (PCA_PWM1 & ~(3<<6)) | PCAx->PCA_PWM_Wide;
 
 		PCA_Timer1 = PCAx->PCA_Value;
-		B_Capture1 = 0;
+					= 0;
 		PCA1_mode = PCAx->PCA_Mode;
 		CCAP1_tmp = PCA_Timer1;
 		CCAP1L = (u8)CCAP1_tmp;			//将影射寄存器写入捕获寄存器，先写CCAP0L

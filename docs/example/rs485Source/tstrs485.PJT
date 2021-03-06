@@ -1,0 +1,32 @@
+[PROJECT]
+Target=TSTRS485.HEX
+Development_Mode=2
+Processor=34623
+ToolSuite=CCS
+
+[Directories]
+Include=
+Library=
+LinkerScript=
+
+[Target Data]
+FileList=TSTRS485.C;
+BuildTool=CCSC
+OptionString=-p +FM
+AdditionalOptionString=
+BuildRequired=1
+
+[TSTRS485.C]
+Type=4
+Path=
+FileList=
+BuildTool=
+OptionString=
+AdditionalOptionString=
+
+[mru-list]
+1=d:\EMBEDDED\RS485NET\SOURCE\TSTRS485.C
+
+[Windows]
+0=0000 d:\EMBEDDED\RS485NET\SOURCE\TSTRS485.C 0 0 796 451 3 0
+

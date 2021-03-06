@@ -8,7 +8,6 @@ Group (Source Group 1)
 File 1,1,<.\LCD_IO16.c><LCD_IO16.c> 0x0 
 File 1,1,<.\main.c><main.c> 0x0 
 File 1,1,<.\timer.c><timer.c> 0x0 
-File 1,1,<.\USART1.C><USART1.C> 0x0 
 
 
 Options 1,0,0  // Target 'Target 1'

@@ -1,0 +1,66 @@
+
+ROM used: 1620 (40%)
+          2048 (50%) including unused fragments
+
+          1 Average locations per line
+          3 Average locations per statement
+
+RAM used: 115 (60%) at main() level
+          126 (66%) worst case
+
+Lines Stmts  %   Files
+----- ----- ---  -----
+  232    89  19  d:\EMBEDDED\RS485NET\SOURCE\TSTRS485.C
+  219     0   0  C:\PROGRA~1\PICC\DEVICES\16F873.H
+  147     0   0  D:\EMBEDDED\RS485NET\SOURCE\INCLUDE\TST485.H
+  269   142  26  C:\PROGRA~1\PICC\DRIVERS\STDLIB.H
+  467   164  24  D:\EMBEDDED\RS485NET\SOURCE\RS485.C
+   63     0   0  D:\EMBEDDED\RS485NET\SOURCE\INCLUDE\RS485.H
+   20     0   0  D:\EMBEDDED\RS485NET\SOURCE\INCLUDE\LCD2.H
+  245    68   8  D:\EMBEDDED\RS485NET\SOURCE\LCD873B.C
+   39     0   0  D:\EMBEDDED\RS485NET\SOURCE\INCLUDE\LCD873B.H
+----- -----
+ 3402   926 Total
+
+Page ROM  %  RAM  Functions:
+---- --- --- ---  ----------
+0     21   1   1  DELAY_MS
+0     14   1   2  RS485INITIALISE
+0    251  15   3  RS485PROCESS
+0     12   1   0  @CONST10357
+0     12   1   0  @CONST10369
+0     15   1   0  @CONST10376
+0    115   7   1  RS485DECODE
+0    158  10   5  RS485SENDPACKET
+0     49   3   6  RS485GETPACKET
+0     20   1   0  @CONST173
+0     20   1   0  @CONST175
+0     39   2   3  CRC16_UPDATE4BITS
+0     17   1   2  RS485UPDATECRC
+0     15   1   1  RS485SENDCHAR
+0     12   1   0  PACKETHASPAYLOAD
+0     21   1   0  @CONST180
+0     25   2   4  BINTOHEXASCII
+0      5   0   0  FUNCTIONMODE
+0      5   0   0  DATAMODE
+0     14   1   1  WRITE_8_BIT
+0     55   3   3  LCDWRITE
+0      6   0   0  DELAYLCD
+0      8   0   0  LINE1
+0      8   0   0  LINE2
+0     23   1   0  CLEARLINE2
+0      8   0   0  CLOCK_ISR
+0     27   2   0  USARTINTERRUPT
+0    398  25   5  MAIN
+0     20   1   0  @CONST10531
+0     17   1   0  @CONST10537
+0     13   1   0  @CONST10541
+0     10   1   0  @CONST10547
+0     20   1   0  @CONST10559
+0     93   6   0  SETUP
+
+ Segment   Used  Free
+---------  ----  ----
+0000-07FF  1620  428
+0800-0FFF     0  2048
+
